@@ -21,8 +21,6 @@ function judge(option) {
     <p v-if="q.dir === 'ja2zh'" class="zh small">{{ q.prompt }}</p>
     <template v-else>
       <p class="zh">{{ q.prompt }}</p>
-      <p class="pinyin">{{ q.card.pinyin }}</p>
-      <div class="row"><AudioButton :text="q.card.zh" /></div>
     </template>
     <p class="meta">正しいものを選んでください。</p>
     <div class="options">

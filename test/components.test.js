@@ -3,7 +3,6 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import ReviewCards from '../src/components/ReviewCards.vue';
 import { formatLesson } from '../src/lib/format.js';
 import Drill from '../src/components/Drill.vue';
-import Mistakes from '../src/components/Mistakes.vue';
 
 const sampleCards = [
   { id: 'c1', zh: '你好。', pinyin: 'Nǐ hǎo.', ja: 'こんにちは。', lesson: '2026-11-07', pillar: 'あいさつ' },
@@ -143,25 +142,5 @@ describe('Drill', () => {
       await clickByText(w, '次へ');
     }
     expect(w.emitted('finished')).toBeTruthy();
-  });
-});
-
-describe('Mistakes', () => {
-  test('間違いと正しい形を並べて表示する', () => {
-    const w = mount(Mistakes, {
-      props: {
-        mistakes: [
-          { id: 'm1', wrong: '我过老婆一起去。', right: '我跟老婆一起去。', point: '「〜と」は跟', source: '2026-10-24' },
-        ],
-      },
-    });
-    expect(w.text()).toContain('我过老婆一起去。');
-    expect(w.text()).toContain('我跟老婆一起去。');
-    expect(w.text()).toContain('「〜と」は跟');
-  });
-
-  test('空ならその旨を表示する', () => {
-    const w = mount(Mistakes, { props: { mistakes: [] } });
-    expect(w.text()).toContain('まだ登録がありません');
   });
 });

@@ -1,4 +1,4 @@
-// 今日の復習カードの選出。
+// レッスンの復習カードの選出。
 // 直近2回分のレッスンを中心にし、古い回のカードを少し混ぜる。
 export function selectDailyCards(cards, { total = 10, recentCount = 7, random = Math.random } = {}) {
   if (!Array.isArray(cards) || cards.length === 0) return [];

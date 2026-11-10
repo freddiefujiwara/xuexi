@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import ExerciseSession from './components/ExerciseSession.vue';
 import Drill from './components/Drill.vue';
-import Mistakes from './components/Mistakes.vue';
+import Vocab from './components/Vocab.vue';
 import StudyRecord from './components/StudyRecord.vue';
 import { API_URL } from './config.js';
 import { selectDailyCards } from './lib/select.js';
@@ -24,7 +24,7 @@ const year = new Date().getFullYear();
 const tab = ref('cards');
 const loading = ref(true);
 const error = ref('');
-const data = ref({ cards: [], drills: [], mistakes: [], studyLog: [] });
+const data = ref({ cards: [], drills: [], mistakes: [], words: [], studyLog: [] });
 const doneToday = ref(false);
 const streakDays = ref(0);
 // サーバー未送信の学習秒数（この画面で計測中＋前回の退避分）。
@@ -133,7 +133,7 @@ onMounted(async () => {
   for (const ev of INTERACTION_EVENTS) window.addEventListener(ev, noteInteraction, { passive: true });
   timer = setInterval(() => {
     if (document.visibilityState !== 'visible') return;
-    if (!['cards', 'drill', 'mistakes'].includes(tab.value)) return;
+    if (!['cards', 'drill', 'vocab'].includes(tab.value)) return;
     // 開きっぱなしの画面（操作なし3分超・非フォーカス）は数えない。
     if (typeof document.hasFocus === 'function' && !document.hasFocus()) return;
     if (!isCountingActive(lastInteractionAt, Date.now())) {
@@ -162,9 +162,9 @@ onBeforeUnmount(() => {
     <nav class="site-nav">
       <a class="brand" href="https://freddiefujiwara.com/">藤原史和｜川口を歩くQAエンジニア</a>
       <ul>
-        <li><button type="button" :class="{ active: tab === 'cards' }" @click="tab = 'cards'">今日の復習</button></li>
+        <li><button type="button" :class="{ active: tab === 'cards' }" @click="tab = 'cards'">レッスンの復習</button></li>
         <li><button type="button" :class="{ active: tab === 'drill' }" @click="tab = 'drill'">疑問詞ドリル</button></li>
-        <li><button type="button" :class="{ active: tab === 'mistakes' }" @click="tab = 'mistakes'">間違いノート</button></li>
+        <li><button type="button" :class="{ active: tab === 'vocab' }" @click="tab = 'vocab'">単語練習</button></li>
         <li><button type="button" :class="{ active: tab === 'record' }" @click="tab = 'record'">記録</button></li>
       </ul>
       <div></div>
@@ -186,7 +186,7 @@ onBeforeUnmount(() => {
       <template v-else>
         <ExerciseSession v-if="tab === 'cards'" :cards="dailyCards" :pool="data.cards" @finished="onFinished" />
         <Drill v-else-if="tab === 'drill'" :drills="data.drills" @finished="onFinished" />
-        <Mistakes v-else-if="tab === 'mistakes'" :mistakes="data.mistakes" />
+        <Vocab v-else-if="tab === 'vocab'" :words="data.words || []" />
         <StudyRecord
           v-else
           :study-log="data.studyLog || []"
