@@ -37,7 +37,7 @@ function answer(ok) {
   <section>
     <div v-if="finished" class="panel center">
       <p class="big">今天的复习完了！</p>
-      <p>今日の復習カードは全部終わりました。</p>
+      <p>レッスンの復習カードは全部終わりました。</p>
     </div>
     <div v-else class="panel">
       <p class="meta">{{ doneCount + 1 }} 枚目 ・ {{ formatLesson(current.lesson) }} のレッスン（{{ current.pillar }}）</p>

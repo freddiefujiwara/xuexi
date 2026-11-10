@@ -596,6 +596,24 @@ input.answer-input:focus {
 }
 
 .audio-btn {
-  padding: 6px 14px;
-  font-size: 0.9rem;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--link);
+  color: var(--bg);
+  cursor: pointer;
+  flex: none;
+}
+.audio-btn .audio-ico {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+.audio-btn.loading {
+  opacity: 0.6;
 }

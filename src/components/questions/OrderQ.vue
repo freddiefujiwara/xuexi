@@ -32,8 +32,6 @@ function judge() {
 <template>
   <div>
     <p>{{ q.card.ja }}</p>
-    <p class="pinyin">{{ q.card.pinyin }}</p>
-    <div class="row"><AudioButton :text="q.card.zh" /></div>
     <p class="meta">フレーズをタップして、文の順番に並べてください。</p>
     <div class="built" :class="{ empty: placed.length === 0 }">
       <button v-for="(pi, pos) in placed" :key="pos" class="chunk placed" @click="removeAt(pos)">
@@ -51,6 +49,7 @@ function judge() {
     <div v-if="ok !== null" class="answer">
       <p :class="ok ? 'right' : 'wrong'">{{ ok ? '正解！' : '不正解…' }}</p>
       <p class="zh small">{{ q.card.zh }}</p>
+      <p class="pinyin">{{ q.card.pinyin }}</p>
       <div class="row">
         <button class="primary" @click="emit('done', ok)">次へ</button>
         <AudioButton :text="q.card.zh" />

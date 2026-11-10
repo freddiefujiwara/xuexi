@@ -11,10 +11,10 @@ const revealed = ref(false);
 <template>
   <div>
     <p class="zh">{{ q.card.zh }}</p>
-    <div class="row"><AudioButton :text="q.card.zh" /></div>
     <div v-if="revealed" class="answer">
       <p class="pinyin">{{ q.card.pinyin }}</p>
       <p>{{ q.card.ja }}</p>
+      <div class="row"><AudioButton :text="q.card.zh" /></div>
     </div>
     <div class="row">
       <button v-if="!revealed" class="primary" @click="revealed = true">ピンインと訳を見る</button>

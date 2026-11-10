@@ -24,8 +24,17 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <button v-if="text" type="button" class="ghost audio-btn" @click="speakChinese(text)">
-    <span aria-hidden="true">🔊</span>
-    {{ state === 'loading' ? '読み込み中…' : state === 'playing' ? '再生中…' : label }}
+  <button
+    v-if="text"
+    type="button"
+    class="audio-btn"
+    :class="{ loading: state === 'loading' }"
+    :aria-label="label"
+    :title="label"
+    @click="speakChinese(text)"
+  >
+    <svg viewBox="0 0 24 24" class="audio-ico" aria-hidden="true">
+      <path :d="state === 'playing' ? 'M6 5h4v14H6zM14 5h4v14h-4z' : 'M8 5v14l11-7z'" />
+    </svg>
   </button>
 </template>
