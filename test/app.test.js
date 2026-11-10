@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { selectDailyCards, shuffle } from '../src/lib/select.js';
+import { isStagingBuild } from '../src/staging-banner.js';
 import { isDoneToday, loadDone, markDone, streak, todayStr } from '../src/lib/progress.js';
 
 const cards = [
@@ -37,6 +38,14 @@ describe('selectDailyCards', () => {
     const picked = selectDailyCards(all, { total: 10, recentCount: 7, random: () => 0.5 });
     expect(picked).toHaveLength(10);
     expect(new Set(picked.map((c) => c.id)).size).toBe(10);
+  });
+});
+
+describe('isStagingBuild', () => {
+  test('VITE_STAGING=1 のときだけ true', () => {
+    expect(isStagingBuild({ VITE_STAGING: '1' })).toBe(true);
+    expect(isStagingBuild({})).toBe(false);
+    expect(isStagingBuild({ VITE_STAGING: '0' })).toBe(false);
   });
 });
 
