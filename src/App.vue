@@ -17,6 +17,7 @@ import {
   logByDate,
   postStudy,
   saveBuffer,
+  isCountingActive,
 } from './lib/study.js';
 
 const year = new Date().getFullYear();
@@ -30,6 +31,13 @@ const streakDays = ref(0);
 const unsentSeconds = ref(0);
 let accumulated = 0;
 let timer = null;
+let lastInteractionAt = Date.now();
+
+function noteInteraction() {
+  lastInteractionAt = Date.now();
+}
+
+const INTERACTION_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
 
 const dailyCards = computed(() => selectDailyCards(data.value.cards));
 const studyByDate = computed(() => logByDate(data.value.studyLog));
@@ -122,9 +130,16 @@ onMounted(async () => {
   unsentSeconds.value = pending[todayStr()] || 0;
   await flushPending();
   // 学習タブを開いている間だけ、画面が見えている時間を計測する。
+  for (const ev of INTERACTION_EVENTS) window.addEventListener(ev, noteInteraction, { passive: true });
   timer = setInterval(() => {
     if (document.visibilityState !== 'visible') return;
     if (!['cards', 'drill', 'mistakes'].includes(tab.value)) return;
+    // 開きっぱなしの画面（操作なし3分超・非フォーカス）は数えない。
+    if (typeof document.hasFocus === 'function' && !document.hasFocus()) return;
+    if (!isCountingActive(lastInteractionAt, Date.now())) {
+      if (accumulated > 0) flushStudy();
+      return;
+    }
     accumulated++;
     unsentSeconds.value++;
     if (accumulated % 10 === 0) saveBuffer(accumulated);
@@ -136,6 +151,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (timer) clearInterval(timer);
+  for (const ev of INTERACTION_EVENTS) window.removeEventListener(ev, noteInteraction);
   document.removeEventListener('visibilitychange', onVisibility);
   window.removeEventListener('pagehide', flushStudy);
 });

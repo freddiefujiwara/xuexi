@@ -127,3 +127,8 @@ export function loadBuffer(storage = localStorage) {
 export function clearBuffer(storage = localStorage) {
   storage.removeItem(BUFFER_KEY);
 }
+
+// 操作が止まってから idleLimitMs を超えたら計測を止める（開きっぱなし対策）。
+export function isCountingActive(lastInteractionAt, now, idleLimitMs = 180000) {
+  return now - lastInteractionAt <= idleLimitMs;
+}
