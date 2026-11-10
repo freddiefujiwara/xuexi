@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue';
 import { shuffle } from '../lib/select.js';
 import { API_URL } from '../config.js';
+import AudioButton from './AudioButton.vue';
+import { drillAudioFile } from '../lib/audio.js';
 
 const props = defineProps({
   drills: { type: Array, default: () => [] },
@@ -83,6 +85,7 @@ function done(ok) {
       </p>
       <p class="zh">{{ current.question }}</p>
       <p class="pinyin">{{ current.q_pinyin }}</p>
+      <div class="row"><AudioButton :file="drillAudioFile(current, 'q')" label="質問を聞く" /></div>
 
       <template v-if="phase === 'input' || phase === 'judging'">
         <p class="meta">中国語で答えを入力してください（声に出してから打つのがおすすめです）。</p>
@@ -111,6 +114,7 @@ function done(ok) {
           <p class="meta">模範解答</p>
           <p class="zh small">{{ current.answer }}</p>
           <p class="pinyin">{{ current.a_pinyin }}</p>
+          <div class="row"><AudioButton :file="drillAudioFile(current, 'a')" label="模範解答を聞く" /></div>
           <p class="meta">あなたの答え：{{ input }}</p>
         </div>
         <div class="row">
@@ -123,6 +127,7 @@ function done(ok) {
         <div class="answer">
           <p class="zh small">{{ current.answer }}</p>
           <p class="pinyin">{{ current.a_pinyin }}</p>
+          <div class="row"><AudioButton :file="drillAudioFile(current, 'a')" label="模範解答を聞く" /></div>
         </div>
         <div class="row">
           <button class="primary" @click="done(true)">言えた</button>

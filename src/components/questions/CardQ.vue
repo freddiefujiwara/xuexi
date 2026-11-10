@@ -1,5 +1,8 @@
 <script setup>
 import { ref } from 'vue';
+import AudioButton from '../AudioButton.vue';
+import { cardAudioFile } from '../../lib/audio.js';
+
 
 defineProps({ q: { type: Object, required: true } });
 const emit = defineEmits(['done']);
@@ -9,6 +12,7 @@ const revealed = ref(false);
 <template>
   <div>
     <p class="zh">{{ q.card.zh }}</p>
+    <div class="row"><AudioButton :file="cardAudioFile(q.card)" /></div>
     <div v-if="revealed" class="answer">
       <p class="pinyin">{{ q.card.pinyin }}</p>
       <p>{{ q.card.ja }}</p>

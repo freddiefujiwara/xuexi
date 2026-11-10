@@ -1,5 +1,8 @@
 <script setup>
 import { ref } from 'vue';
+import AudioButton from '../AudioButton.vue';
+import { cardAudioFile } from '../../lib/audio.js';
+
 
 const props = defineProps({ q: { type: Object, required: true } });
 const emit = defineEmits(['done']);
@@ -36,6 +39,7 @@ function judge(option) {
       <p class="pinyin">{{ q.card.pinyin }}</p>
       <div class="row">
         <button class="primary" @click="emit('done', ok)">次へ</button>
+        <AudioButton :file="cardAudioFile(q.card)" />
       </div>
     </div>
   </div>
