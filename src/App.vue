@@ -164,7 +164,7 @@ onBeforeUnmount(() => {
 <template>
   <div>
     <nav class="site-nav">
-      <a class="brand" href="https://freddiefujiwara.com/">藤原史和｜川口を歩くQAエンジニア</a>
+      <span class="brand">藤原史和｜川口を歩くQAエンジニア</span>
       <ul>
         <li><button type="button" :class="{ active: tab === 'cards' }" @click="tab = 'cards'">レッスンの復習</button></li>
         <li><button type="button" :class="{ active: tab === 'drill' }" @click="tab = 'drill'">疑問詞ドリル</button></li>
