@@ -105,3 +105,25 @@ export function addPending(seconds, storage = localStorage, date = todayStr()) {
 export function clearPending(storage = localStorage) {
   storage.removeItem(PENDING_KEY);
 }
+
+// 計測中の秒数は、画面を閉じても失わないよう定期的に端末へ退避する。
+const BUFFER_KEY = `xuexi:session-buffer${suffix}`;
+
+export function saveBuffer(seconds, storage = localStorage, date = todayStr()) {
+  if (seconds > 0) storage.setItem(BUFFER_KEY, JSON.stringify({ date, seconds }));
+  else storage.removeItem(BUFFER_KEY);
+}
+
+export function loadBuffer(storage = localStorage) {
+  try {
+    const v = JSON.parse(storage.getItem(BUFFER_KEY) || 'null');
+    if (v && v.date && Number(v.seconds) > 0) return { date: v.date, seconds: Number(v.seconds) };
+  } catch {
+    // ignore broken buffer
+  }
+  return null;
+}
+
+export function clearBuffer(storage = localStorage) {
+  storage.removeItem(BUFFER_KEY);
+}
