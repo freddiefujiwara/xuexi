@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sharePalette, shareTexts, SHARE_W, SHARE_H } from '../src/lib/shareImage.js';
+import { sharePalette, shareTexts, prefersShareSheet, SHARE_W, SHARE_H } from '../src/lib/shareImage.js';
 
 describe('sharePalette', () => {
   it('ライトとダークで配色が切り替わる', () => {
@@ -30,5 +30,17 @@ describe('shareTexts', () => {
   it('画像サイズは 1080x1350', () => {
     expect(SHARE_W).toBe(1080);
     expect(SHARE_H).toBe(1350);
+  });
+});
+
+describe('prefersShareSheet', () => {
+  it('タッチ端末＋ファイル共有可ならシートを使う', () => {
+    expect(prefersShareSheet({ hasShare: true, canShareFiles: true, coarsePointer: true })).toBe(true);
+  });
+  it('PC（細かいポインタ）ではシートを使わない', () => {
+    expect(prefersShareSheet({ hasShare: true, canShareFiles: true, coarsePointer: false })).toBe(false);
+  });
+  it('共有APIが無ければシートを使わない', () => {
+    expect(prefersShareSheet({ hasShare: false, canShareFiles: false, coarsePointer: true })).toBe(false);
   });
 });

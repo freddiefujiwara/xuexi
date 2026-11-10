@@ -138,3 +138,9 @@ export async function shareCanvasImage(canvas, text = '') {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
   return 'downloaded';
 }
+
+// 共有シート（OSの共有UI）で出すかどうか。PCのブラウザにも navigator.share は
+// あるため、「ファイル共有が可能」かつ「タッチ主体の端末」の両方で判定する。
+export function prefersShareSheet({ hasShare, canShareFiles, coarsePointer }) {
+  return !!(hasShare && canShareFiles && coarsePointer);
+}

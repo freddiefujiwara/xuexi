@@ -1,7 +1,7 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { buildCalendar, buildShareText, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
-import { buildShareCanvas, shareCanvasImage } from '../lib/shareImage.js';
+import { buildShareCanvas, prefersShareSheet, shareCanvasImage } from '../lib/shareImage.js';
 import { todayStr } from '../lib/progress.js';
 
 const props = defineProps({
@@ -51,20 +51,56 @@ async function copyShareText() {
   }
 }
 
+// 共有シートで出すのは「ファイル共有ができて、タッチ主体の端末」のときだけ。
+// PC では最初からコピー＋投稿リンクの形にする（PCにも navigator.share はあるため）。
+const sheetMode = ref(false);
+onMounted(() => {
+  let canFiles = false;
+  try {
+    canFiles = !!(
+      navigator.canShare &&
+      navigator.canShare({ files: [new File(['x'], 'x.png', { type: 'image/png' })] })
+    );
+  } catch {
+    canFiles = false;
+  }
+  sheetMode.value = prefersShareSheet({
+    hasShare: !!navigator.share,
+    canShareFiles: canFiles,
+    coarsePointer: !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches),
+  });
+});
+
+function buildCanvas() {
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return buildShareCanvas({
+    year: viewYear.value,
+    month: viewMonth.value,
+    byDate: byDate.value,
+    todaySeconds: props.todaySeconds,
+    streakDays: props.streakDays,
+    dark,
+    today,
+  });
+}
+
+async function saveImageOnly() {
+  imageNote.value = '';
+  try {
+    const canvas = await buildCanvas();
+    const how = await shareCanvasImage(canvas);
+    imageNote.value = how === 'shared' ? '共有しました。' : '画像をダウンロードしました。';
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    imageNote.value = '画像を作れませんでした。';
+  }
+}
+
 async function shareAll() {
   imageNote.value = '';
   shareNote.value = '';
   try {
-    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const canvas = await buildShareCanvas({
-      year: viewYear.value,
-      month: viewMonth.value,
-      byDate: byDate.value,
-      todaySeconds: props.todaySeconds,
-      streakDays: props.streakDays,
-      dark,
-      today,
-    });
+    const canvas = await buildCanvas();
     const how = await shareCanvasImage(canvas, shareTextValue.value);
     if (how === 'shared') {
       imageNote.value = '共有しました。';
@@ -110,12 +146,16 @@ async function shareAll() {
 
     <div class="answer">
       <p class="meta">SNS投稿用</p>
-      <div class="row">
-        <button class="primary" @click="shareAll">画像と文を共有</button>
+      <div v-if="sheetMode" class="row">
+        <button class="primary" @click="shareAll">学習記録をSNSに共有</button>
+        <button class="ghost" @click="saveImageOnly">画像で保存</button>
+      </div>
+      <div v-else class="row">
+        <button class="primary" @click="saveImageOnly">画像で保存</button>
       </div>
       <p v-if="imageNote" class="hint">{{ imageNote }}</p>
       <p v-if="shareNote" class="hint">{{ shareNote }}</p>
-      <div v-if="showShareFallback">
+      <div v-if="!sheetMode || showShareFallback">
         <textarea class="share-text" readonly rows="3" :value="shareTextValue"></textarea>
         <div class="row">
           <button class="ghost" @click="copyShareText">{{ copied ? 'コピーしました' : 'コピー' }}</button>
