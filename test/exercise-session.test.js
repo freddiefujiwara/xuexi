@@ -52,7 +52,7 @@ describe('ExerciseSession: 並べ替え→穴埋め入力', () => {
     const w = mount(ExerciseSession, { props: { cards, pool } });
     expect(w.text()).toContain('並べ替え');
     // 答えの順にプールのチャンクをタップする
-    for (const chunk of ['墙上', '贴着', '一张', '布告。']) {
+    for (const chunk of ['墙上', '贴着', '一张', '布告']) {
       const btn = w.findAll('.pool .chunk').find((b) => b.text() === chunk);
       expect(btn, `chunk "${chunk}"`).toBeTruthy();
       await btn.trigger('click');
@@ -74,12 +74,12 @@ describe('ExerciseSession: 並べ替え→穴埋め入力', () => {
   test('並べ替えを間違えると不正解表示になる', async () => {
     const cards = [pool[1]];
     const w = mount(ExerciseSession, { props: { cards, pool } });
-    for (const chunk of ['贴着', '墙上', '一张', '布告。']) {
+    for (const chunk of ['贴着', '墙上', '一张', '布告']) {
       const btn = w.findAll('.pool .chunk').find((b) => b.text() === chunk);
       await btn.trigger('click');
     }
     await clickButtonWithText(w, '答え合わせ');
     expect(w.text()).toContain('不正解');
-    expect(w.text()).toContain('墙上贴着一张布告。');
+    expect(w.text()).toContain('墙上贴着一张布告');
   });
 });

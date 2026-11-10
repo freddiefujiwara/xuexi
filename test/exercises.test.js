@@ -9,6 +9,8 @@ import {
   makeChoice,
   makeCloze,
   makeOrder,
+  mutateJa,
+  mutateZh,
   normalizeAnswer,
   splitChunks,
 } from '../src/lib/exercises.js';
@@ -52,8 +54,9 @@ describe('makeChoice', () => {
     expect(new Set(q.options).size).toBe(q.options.length);
     expect(q.options.length).toBe(4);
   });
-  test('プールが空ならカード形式に落ちる', () => {
-    expect(makeChoice(pool[0], [pool[0]], () => 0).type).toBe('card');
+  test('誤答が一切作れなければカード形式に落ちる', () => {
+    const bare = { id: 'b1', zh: '您好。', pinyin: '', ja: 'こんにちは。', lesson: 'L', pillar: '-', target: '', chunks: '' };
+    expect(makeChoice(bare, [bare], () => 0).type).toBe('card');
   });
 });
 
@@ -76,7 +79,41 @@ describe('makeOrder', () => {
   test('ピースは chunks の並べ替えで、答えの並びを保持する', () => {
     const q = makeOrder(pool[1], () => 0.3);
     expect([...q.pieces].sort()).toEqual([...q.answerChunks].sort());
-    expect(q.answerChunks).toEqual(['墙上', '贴着', '一张', '布告。']);
+    expect(q.answerChunks).toEqual(['墙上', '贴着', '一张', '布告']);
+  });
+  test('文末の句読点はタイルから外れて suffix になる', () => {
+    const q = makeOrder(pool[1], () => 0.3);
+    expect(q.suffix).toBe('。');
+    expect(q.pieces.some((p) => p.includes('。'))).toBe(false);
+    expect(q.answerChunks.join('') + q.suffix).toBe(pool[1].zh);
+  });
+});
+
+describe('mutateZh / mutateJa', () => {
+  test('対象語・数字・語順などを崩した誤答を作る', () => {
+    const muts = mutateZh(pool[1], pool, () => 0.4);
+    expect(muts.length).toBeGreaterThan(0);
+    expect(muts).not.toContain(pool[1].zh);
+    // 対象語（贴着）を他の対象語に替えた文が含まれる
+    expect(muts.some((s) => !s.includes('贴着'))).toBe(true);
+  });
+  test('漢数字を入れ替える', () => {
+    const card = { id: 'n1', zh: '工作八个小时。', pinyin: '', ja: '8時間働く。', lesson: 'L', pillar: '-', target: '八个小时', chunks: '' };
+    const muts = mutateZh(card, pool, () => 0.4);
+    expect(muts.some((s) => !s.includes('八') && /[一二三四五六七九十]个小时/.test(s))).toBe(true);
+  });
+  test('日本語訳は数字違いを作る', () => {
+    const muts = mutateJa({ ja: 'テレビを1時間見た。' }, () => 0.4);
+    expect(muts).toHaveLength(1);
+    expect(muts[0]).toMatch(/^テレビを[2-9]時間見た。$/);
+    expect(mutateJa({ ja: '少し疲れている。' }, () => 0.4)).toEqual([]);
+  });
+  test('選択問題の誤答には、他のカードの文ではない崩し文が混ざる', () => {
+    const q = makeChoice(pool[1], pool, () => 0); // random 0 → ja2zh
+    expect(q.dir).toBe('ja2zh');
+    const poolSentences = new Set(pool.map((c) => c.zh));
+    const distractors = q.options.filter((o) => o !== q.answer);
+    expect(distractors.some((o) => !poolSentences.has(o))).toBe(true);
   });
 });
 

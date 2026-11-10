@@ -38,6 +38,7 @@ function judge() {
         {{ q.pieces[pi] }}
       </button>
       <span v-if="placed.length === 0" class="placeholder">ここに文が組み上がります</span>
+      <span v-if="q.suffix" class="suffix">{{ q.suffix }}</span>
     </div>
     <div class="pool">
       <button v-for="i in remaining" :key="i" class="chunk" @click="add(i)">{{ q.pieces[i] }}</button>
@@ -67,4 +68,5 @@ function judge() {
 }
 .chunk.placed { background: #f7e9e2; border-color: #8f2a12; color: #8f2a12; }
 .placeholder { color: #8a7f6e; font-size: 13px; }
+.suffix { font-size: 18px; color: #8a7f6e; }
 </style>
