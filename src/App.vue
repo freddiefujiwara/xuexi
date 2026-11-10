@@ -92,18 +92,6 @@ async function flushPending() {
   if (allOk) clearPending();
 }
 
-async function onAddManual(minutes) {
-  if (!API_URL) return;
-  const seconds = minutes * 60;
-  try {
-    const json = await postStudy(API_URL, { date: todayStr(), seconds, source: 'manual' });
-    applyStudyTotal(json.date, json.totalSeconds);
-  } catch {
-    addPending(seconds);
-    unsentSeconds.value += seconds;
-  }
-}
-
 function onVisibility() {
   if (document.visibilityState === 'hidden') flushStudy();
 }
@@ -188,7 +176,6 @@ onBeforeUnmount(() => {
           :study-log="data.studyLog || []"
           :today-seconds="todaySeconds"
           :streak-days="studyStreakDays"
-          @add-manual="onAddManual"
         />
       </template>
 
