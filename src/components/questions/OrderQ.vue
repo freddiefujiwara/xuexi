@@ -58,15 +58,15 @@ function judge() {
 
 <style scoped>
 .built {
-  min-height: 52px; border: 1px dashed #d8cfc2; border-radius: 12px; padding: 8px;
+  min-height: 52px; border: 1px dashed var(--border); border-radius: 12px; padding: 8px;
   display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px;
 }
 .pool { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .chunk {
   padding: 8px 12px; border-radius: 999px; font-size: 16px; cursor: pointer;
-  background: #fff; border: 1px solid #d8cfc2; color: #26221d;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
 }
-.chunk.placed { background: #f7e9e2; border-color: #8f2a12; color: #8f2a12; }
-.placeholder { color: #8a7f6e; font-size: 13px; }
-.suffix { font-size: 18px; color: #8a7f6e; }
+.chunk.placed { background: var(--surface-elevated); border-color: var(--link-active); color: var(--link-active); }
+.placeholder { color: var(--muted-2); font-size: 13px; }
+.suffix { font-size: 18px; color: var(--muted-2); }
 </style>

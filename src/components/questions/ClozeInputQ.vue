@@ -39,6 +39,6 @@ function judge() {
 <style scoped>
 .cloze-input {
   flex: 2; padding: 12px; border-radius: 12px; font-size: 16px;
-  border: 1px solid #d8cfc2; background: #fff; color: #26221d;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
 }
 </style>

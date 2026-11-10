@@ -136,10 +136,10 @@ function done(ok) {
 <style scoped>
 .drill-input {
   flex: 2; padding: 12px; border-radius: 12px; font-size: 16px;
-  border: 1px solid #d8cfc2; background: #fff; color: #26221d;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
 }
 .linklike {
-  background: none; border: none; color: #8f2a12; cursor: pointer;
+  background: none; border: none; color: var(--link-active); cursor: pointer;
   font-size: 12px; padding: 0; text-decoration: underline;
 }
 </style>
