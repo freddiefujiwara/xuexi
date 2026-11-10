@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { buildCalendar, buildMinchalleText, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
+import { buildCalendar, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
 import { buildShareCanvas, shareCanvasImage } from '../lib/shareImage.js';
 import { todayStr } from '../lib/progress.js';
 
@@ -13,18 +13,12 @@ const props = defineProps({
 const now = new Date();
 const viewYear = ref(now.getFullYear());
 const viewMonth = ref(now.getMonth() + 1);
-const copied = ref(false);
-const showText = ref(false);
 
 const byDate = computed(() => logByDate(props.studyLog));
 const cells = computed(() => buildCalendar(viewYear.value, viewMonth.value, byDate.value));
 const summary = computed(() => monthSummary(viewYear.value, viewMonth.value, byDate.value));
 const today = todayStr();
 const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-
-const shareText = computed(() =>
-  buildMinchalleText({ date: today, seconds: props.todaySeconds, streakDays: props.streakDays })
-);
 
 function moveMonth(delta) {
   const d = new Date(viewYear.value, viewMonth.value - 1 + delta, 1);
@@ -51,16 +45,6 @@ async function saveImage() {
     imageNote.value = how === 'shared' ? '共有しました。' : '画像をダウンロードしました。';
   } catch {
     imageNote.value = '画像を作れませんでした。';
-  }
-}
-
-async function copyText() {
-  try {
-    await navigator.clipboard.writeText(shareText.value);
-    copied.value = true;
-    setTimeout(() => (copied.value = false), 2000);
-  } catch {
-    showText.value = true;
   }
 }
 </script>
@@ -96,12 +80,9 @@ async function copyText() {
     <div class="answer">
       <p class="meta">みんチャレ投稿用</p>
       <div class="row">
-        <button class="primary" @click="copyText">{{ copied ? 'コピーしました' : '今日の記録をコピー' }}</button>
-        <button class="ghost" @click="saveImage">画像で保存</button>
-        <button class="ghost" @click="showText = !showText">テキストを見る</button>
+        <button class="primary" @click="saveImage">画像で保存</button>
       </div>
       <p v-if="imageNote" class="hint">{{ imageNote }}</p>
-      <textarea v-if="showText" class="share-text" readonly rows="3" :value="shareText"></textarea>
     </div>
   </section>
 </template>

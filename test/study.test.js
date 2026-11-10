@@ -98,3 +98,11 @@ describe('session buffer', () => {
     expect(loadBuffer(storage)).toBeNull();
   });
 });
+
+describe('isCountingActive', () => {
+  it('操作直後は計測中、3分超で停止', async () => {
+    const { isCountingActive } = await import('../src/lib/study.js');
+    expect(isCountingActive(1000, 1000 + 179000)).toBe(true);
+    expect(isCountingActive(1000, 1000 + 181000)).toBe(false);
+  });
+});
