@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { buildCalendar, buildMinchalleText, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
+import { buildShareCanvas, shareCanvasImage } from '../lib/shareImage.js';
 import { todayStr } from '../lib/progress.js';
 
 const props = defineProps({
@@ -8,7 +9,6 @@ const props = defineProps({
   todaySeconds: { type: Number, default: 0 },
   streakDays: { type: Number, default: 0 },
 });
-const emit = defineEmits(['add-manual']);
 
 const now = new Date();
 const viewYear = ref(now.getFullYear());
@@ -32,6 +32,28 @@ function moveMonth(delta) {
   viewMonth.value = d.getMonth() + 1;
 }
 
+const imageNote = ref('');
+
+async function saveImage() {
+  imageNote.value = '';
+  try {
+    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const canvas = await buildShareCanvas({
+      year: viewYear.value,
+      month: viewMonth.value,
+      byDate: byDate.value,
+      todaySeconds: props.todaySeconds,
+      streakDays: props.streakDays,
+      dark,
+      today,
+    });
+    const how = await shareCanvasImage(canvas);
+    imageNote.value = how === 'shared' ? '共有しました。' : '画像をダウンロードしました。';
+  } catch {
+    imageNote.value = '画像を作れませんでした。';
+  }
+}
+
 async function copyText() {
   try {
     await navigator.clipboard.writeText(shareText.value);
@@ -46,14 +68,7 @@ async function copyText() {
 <template>
   <section class="panel">
     <p class="big">今日の勉強 {{ formatMinutes(todaySeconds) }} 分</p>
-    <p class="meta">連続 {{ streakDays }} 日。このアプリで学習した時間は自動で記録されます。</p>
-
-    <div class="row">
-      <button class="ghost" @click="emit('add-manual', 5)">+5分</button>
-      <button class="ghost" @click="emit('add-manual', 10)">+10分</button>
-      <button class="ghost" @click="emit('add-manual', 15)">+15分</button>
-    </div>
-    <p class="hint">レッスンや他の方法で勉強した分は、ボタンで足せます。</p>
+    <p class="meta">連続 {{ streakDays }} 日</p>
 
     <div class="cal-head">
       <button class="ghost cal-nav" @click="moveMonth(-1)">←</button>
@@ -79,11 +94,13 @@ async function copyText() {
     <p class="meta">今月は {{ summary.days }} 日、合計 {{ formatMinutes(summary.seconds) }} 分勉強しました。</p>
 
     <div class="answer">
-      <p class="meta">みんチャレ投稿用テキスト</p>
+      <p class="meta">みんチャレ投稿用</p>
       <div class="row">
         <button class="primary" @click="copyText">{{ copied ? 'コピーしました' : '今日の記録をコピー' }}</button>
+        <button class="ghost" @click="saveImage">画像で保存</button>
         <button class="ghost" @click="showText = !showText">テキストを見る</button>
       </div>
+      <p v-if="imageNote" class="hint">{{ imageNote }}</p>
       <textarea v-if="showText" class="share-text" readonly rows="3" :value="shareText"></textarea>
     </div>
   </section>
