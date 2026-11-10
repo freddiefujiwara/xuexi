@@ -1,5 +1,7 @@
 <script setup>
 import { ref } from 'vue';
+import AudioButton from '../AudioButton.vue';
+
 
 defineProps({ q: { type: Object, required: true } });
 const emit = defineEmits(['done']);
@@ -9,6 +11,7 @@ const revealed = ref(false);
 <template>
   <div>
     <p class="zh">{{ q.card.zh }}</p>
+    <div class="row"><AudioButton :text="q.card.zh" /></div>
     <div v-if="revealed" class="answer">
       <p class="pinyin">{{ q.card.pinyin }}</p>
       <p>{{ q.card.ja }}</p>
