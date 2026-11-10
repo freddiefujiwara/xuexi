@@ -18,6 +18,9 @@ import {
   postStudy,
   saveBuffer,
   isCountingActive,
+  newBatchId,
+  pendingSeconds,
+  removePendingChunk,
 } from './lib/study.js';
 
 const year = new Date().getFullYear();
@@ -71,33 +74,34 @@ async function flushStudy() {
   const seconds = accumulated;
   accumulated = 0;
   clearBuffer();
+  const batchId = newBatchId();
   try {
-    const json = await postStudy(API_URL, { date: todayStr(), seconds, source: 'auto' });
+    const json = await postStudy(API_URL, { date: todayStr(), seconds, source: 'auto', batchId });
     unsentSeconds.value = Math.max(0, unsentSeconds.value - seconds);
     applyStudyTotal(json.date, json.totalSeconds);
   } catch {
-    addPending(seconds);
+    // 応答が失われても、同じバッチIDで再送するのでサーバー側で二重加算されない。
+    addPending(seconds, localStorage, todayStr(), batchId);
   }
 }
 
 async function flushPending() {
   if (!API_URL) return;
   const pending = loadPending();
-  const dates = Object.keys(pending);
-  if (dates.length === 0) return;
-  let allOk = true;
-  for (const date of dates) {
-    try {
-      const json = await postStudy(API_URL, { date, seconds: pending[date], source: 'auto' });
-      applyStudyTotal(json.date, json.totalSeconds);
-      if (date === todayStr()) {
-        unsentSeconds.value = Math.max(0, unsentSeconds.value - pending[date]);
+  for (const date of Object.keys(pending)) {
+    for (const chunk of [...pending[date]]) {
+      try {
+        const json = await postStudy(API_URL, { date, seconds: chunk.seconds, source: 'auto', batchId: chunk.batchId });
+        applyStudyTotal(json.date, json.totalSeconds);
+        removePendingChunk(date, chunk);
+        if (date === todayStr()) {
+          unsentSeconds.value = Math.max(0, unsentSeconds.value - chunk.seconds);
+        }
+      } catch {
+        // 失敗したチャンクは残す（成功分はその場で取り除く）。
       }
-    } catch {
-      allOk = false;
     }
   }
-  if (allOk) clearPending();
 }
 
 function onVisibility() {
@@ -127,7 +131,7 @@ onMounted(async () => {
     clearBuffer();
   }
   const pending = loadPending();
-  unsentSeconds.value = pending[todayStr()] || 0;
+  unsentSeconds.value = pendingSeconds(pending, todayStr());
   await flushPending();
   // 学習タブを開いている間だけ、画面が見えている時間を計測する。
   for (const ev of INTERACTION_EVENTS) window.addEventListener(ev, noteInteraction, { passive: true });

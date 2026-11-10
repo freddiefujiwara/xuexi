@@ -7,6 +7,8 @@ import {
   formatMinutes,
   loadPending,
   logByDate,
+  pendingSeconds,
+  removePendingChunk,
   monthSummary,
   studyLevel,
 } from '../src/lib/study.js';
@@ -73,14 +75,29 @@ describe('buildMinchalleText', () => {
 });
 
 describe('pending', () => {
-  it('未送信分を貯めて消せる', () => {
+  it('未送信分をチャンク（バッチID付き）で貯め、成功分だけ消せる', () => {
     const storage = fakeStorage();
-    addPending(120, storage, '2026-11-10');
-    addPending(60, storage, '2026-11-10');
+    addPending(120, storage, '2026-11-10', 'b1');
+    addPending(60, storage, '2026-11-10', 'b2');
     addPending(30, storage, '2026-11-09');
-    expect(loadPending(storage)).toEqual({ '2026-11-10': 180, '2026-11-09': 30 });
+    expect(loadPending(storage)).toEqual({
+      '2026-11-10': [
+        { seconds: 120, batchId: 'b1' },
+        { seconds: 60, batchId: 'b2' },
+      ],
+      '2026-11-09': [{ seconds: 30, batchId: null }],
+    });
+    expect(pendingSeconds(loadPending(storage), '2026-11-10')).toBe(180);
+    removePendingChunk('2026-11-10', { seconds: 120, batchId: 'b1' }, storage);
+    expect(pendingSeconds(loadPending(storage), '2026-11-10')).toBe(60);
     clearPending(storage);
     expect(loadPending(storage)).toEqual({});
+  });
+
+  it('旧形式（日付→秒数）も読み込める', () => {
+    const storage = fakeStorage();
+    storage.setItem('xuexi:pending-study', JSON.stringify({ '2026-11-10': 180 }));
+    expect(loadPending(storage)).toEqual({ '2026-11-10': [{ seconds: 180, batchId: null }] });
   });
 });
 
