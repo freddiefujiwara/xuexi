@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { buildCalendar, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
+import { buildCalendar, buildShareText, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
 import { buildShareCanvas, shareCanvasImage } from '../lib/shareImage.js';
 import { todayStr } from '../lib/progress.js';
 
@@ -27,6 +27,43 @@ function moveMonth(delta) {
 }
 
 const imageNote = ref('');
+const shareNote = ref('');
+const showShareFallback = ref(false);
+const copied = ref(false);
+
+const shareTextValue = computed(() =>
+  buildShareText({ seconds: props.todaySeconds, streakDays: props.streakDays })
+);
+const xIntent = computed(
+  () => `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTextValue.value)}`
+);
+const threadsIntent = computed(
+  () => `https://www.threads.net/intent/post?text=${encodeURIComponent(shareTextValue.value)}`
+);
+
+async function shareText() {
+  shareNote.value = '';
+  if (navigator.share) {
+    try {
+      await navigator.share({ text: shareTextValue.value });
+      shareNote.value = '共有しました。';
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+  }
+  showShareFallback.value = true;
+}
+
+async function copyShareText() {
+  try {
+    await navigator.clipboard.writeText(shareTextValue.value);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 2000);
+  } catch {
+    shareNote.value = 'コピーできませんでした。上の文を長押しでコピーしてください。';
+  }
+}
 
 async function saveImage() {
   imageNote.value = '';
@@ -78,11 +115,34 @@ async function saveImage() {
     <p class="meta">今月は {{ summary.days }} 日、合計 {{ formatMinutes(summary.seconds) }} 分勉強しました。</p>
 
     <div class="answer">
-      <p class="meta">みんチャレ投稿用</p>
+      <p class="meta">SNS投稿用</p>
       <div class="row">
         <button class="primary" @click="saveImage">画像で保存</button>
+        <button class="ghost" @click="shareText">投稿文を共有</button>
       </div>
       <p v-if="imageNote" class="hint">{{ imageNote }}</p>
+      <p v-if="shareNote" class="hint">{{ shareNote }}</p>
+      <div v-if="showShareFallback">
+        <textarea class="share-text" readonly rows="3" :value="shareTextValue"></textarea>
+        <div class="row">
+          <button class="ghost" @click="copyShareText">{{ copied ? 'コピーしました' : 'コピー' }}</button>
+          <a class="share-link" :href="xIntent" target="_blank" rel="noopener">Xで投稿</a>
+          <a class="share-link" :href="threadsIntent" target="_blank" rel="noopener">Threadsで投稿</a>
+        </div>
+      </div>
     </div>
   </section>
 </template>
+
+<style scoped>
+.share-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+</style>

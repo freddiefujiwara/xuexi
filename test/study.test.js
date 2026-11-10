@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   addPending,
   buildCalendar,
-  buildMinchalleText,
+  buildShareText,
   clearPending,
   formatMinutes,
   loadPending,
@@ -66,11 +66,16 @@ describe('monthSummary', () => {
   });
 });
 
-describe('buildMinchalleText', () => {
-  it('時間と連続日数を含む', () => {
-    const text = buildMinchalleText({ date: '2026-11-10', seconds: 900, streakDays: 3 });
-    expect(text).toContain('中国語の勉強 15分');
-    expect(text).toContain('連続 3 日');
+describe('buildShareText', () => {
+  it('SNS投稿文を作る', () => {
+    const text = buildShareText({ seconds: 900, streakDays: 3 });
+    expect(text).toContain('「学习」で今日は15分学習しました。');
+    expect(text).toContain('連続3日。');
+    expect(text).toContain('https://freddiefujiwara.com/xuexi');
+  });
+  it('連続0日なら連続行を出さない', () => {
+    const text = buildShareText({ seconds: 0, streakDays: 0 });
+    expect(text).not.toContain('連続');
   });
 });
 
