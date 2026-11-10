@@ -1,22 +1,22 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { playingText, speakChinese, subscribeAudio } from '../lib/audio.js';
+import { audioState, playingText, speakChinese, subscribeAudio } from '../lib/audio.js';
 
 const props = defineProps({
   text: { type: String, default: '' },
   label: { type: String, default: '聞く' },
 });
 
-const playing = ref(false);
+const state = ref(null);
 let unsubscribe = null;
 
 function sync(current) {
-  playing.value = Boolean(props.text) && current === props.text;
+  state.value = props.text && current.text === props.text ? current.state : null;
 }
 
 onMounted(() => {
   unsubscribe = subscribeAudio(sync);
-  sync(playingText());
+  sync({ text: playingText(), state: audioState() });
 });
 onBeforeUnmount(() => {
   if (unsubscribe) unsubscribe();
@@ -25,6 +25,7 @@ onBeforeUnmount(() => {
 
 <template>
   <button v-if="text" type="button" class="ghost audio-btn" @click="speakChinese(text)">
-    <span aria-hidden="true">🔊</span> {{ playing ? '再生中…' : label }}
+    <span aria-hidden="true">🔊</span>
+    {{ state === 'loading' ? '読み込み中…' : state === 'playing' ? '再生中…' : label }}
   </button>
 </template>
