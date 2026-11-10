@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import { formatLesson } from '../lib/format.js';
 
 const props = defineProps({
   cards: { type: Array, default: () => [] },
@@ -39,7 +40,7 @@ function answer(ok) {
       <p>今日の復習カードは全部終わりました。</p>
     </div>
     <div v-else class="panel">
-      <p class="meta">{{ doneCount + 1 }} 枚目 ・ {{ current.lesson }} のレッスン（{{ current.pillar }}）</p>
+      <p class="meta">{{ doneCount + 1 }} 枚目 ・ {{ formatLesson(current.lesson) }} のレッスン（{{ current.pillar }}）</p>
       <p class="zh">{{ current.zh }}</p>
       <div v-if="revealed" class="answer">
         <p class="pinyin">{{ current.pinyin }}</p>

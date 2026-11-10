@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, test } from 'vitest';
 import ReviewCards from '../src/components/ReviewCards.vue';
+import { formatLesson } from '../src/lib/format.js';
 import Drill from '../src/components/Drill.vue';
 import Mistakes from '../src/components/Mistakes.vue';
 
@@ -14,6 +15,14 @@ async function clickByText(wrapper, text) {
   expect(btn, `button "${text}"`).toBeTruthy();
   await btn.trigger('click');
 }
+
+describe('formatLesson', () => {
+  test('ISO文字列は日付部分だけにする', () => {
+    expect(formatLesson('2026-10-30T15:00:00.000Z')).toBe('2026-10-30');
+    expect(formatLesson('2026-11-07')).toBe('2026-11-07');
+    expect(formatLesson('')).toBe('');
+  });
+});
 
 describe('ReviewCards', () => {
   test('最初は訳を隠し、タップで表示する', async () => {
