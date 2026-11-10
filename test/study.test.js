@@ -83,3 +83,18 @@ describe('pending', () => {
     expect(loadPending(storage)).toEqual({});
   });
 });
+
+describe('session buffer', () => {
+  it('計測中の秒数を退避して読み戻せる', async () => {
+    const { saveBuffer, loadBuffer, clearBuffer } = await import('../src/lib/study.js');
+    const storage = fakeStorage();
+    expect(loadBuffer(storage)).toBeNull();
+    saveBuffer(42, storage, '2026-11-10');
+    expect(loadBuffer(storage)).toEqual({ date: '2026-11-10', seconds: 42 });
+    saveBuffer(0, storage, '2026-11-10');
+    expect(loadBuffer(storage)).toBeNull();
+    saveBuffer(10, storage, '2026-11-10');
+    clearBuffer(storage);
+    expect(loadBuffer(storage)).toBeNull();
+  });
+});

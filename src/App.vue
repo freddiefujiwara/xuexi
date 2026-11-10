@@ -9,11 +9,14 @@ import { selectDailyCards } from './lib/select.js';
 import { isDoneToday, loadDone, markDone, streak, todayStr } from './lib/progress.js';
 import {
   addPending,
+  clearBuffer,
   clearPending,
   formatMinutes,
+  loadBuffer,
   loadPending,
   logByDate,
   postStudy,
+  saveBuffer,
 } from './lib/study.js';
 
 const tab = ref('cards');
@@ -58,6 +61,7 @@ async function flushStudy() {
   if (!API_URL || accumulated <= 0) return;
   const seconds = accumulated;
   accumulated = 0;
+  clearBuffer();
   try {
     const json = await postStudy(API_URL, { date: todayStr(), seconds, source: 'auto' });
     unsentSeconds.value = Math.max(0, unsentSeconds.value - seconds);
@@ -119,6 +123,12 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+  // 前回、閉じる前に退避した計測分を未送信分へ寄せる。
+  const buffer = loadBuffer();
+  if (buffer) {
+    addPending(buffer.seconds, localStorage, buffer.date);
+    clearBuffer();
+  }
   const pending = loadPending();
   unsentSeconds.value = pending[todayStr()] || 0;
   await flushPending();
@@ -128,6 +138,7 @@ onMounted(async () => {
     if (!['cards', 'drill', 'mistakes'].includes(tab.value)) return;
     accumulated++;
     unsentSeconds.value++;
+    if (accumulated % 10 === 0) saveBuffer(accumulated);
     if (accumulated >= 60) flushStudy();
   }, 1000);
   document.addEventListener('visibilitychange', onVisibility);
