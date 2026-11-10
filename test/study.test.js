@@ -69,9 +69,8 @@ describe('monthSummary', () => {
 describe('buildShareText', () => {
   it('SNS投稿文を作る', () => {
     const text = buildShareText({ seconds: 900, streakDays: 3 });
-    expect(text).toContain('「学习」で今日は15分学習しました。');
+    expect(text).toBe('中国語学習アプリ「学习」で今日は15分学習しました。\n連続3日。');
     expect(text).toContain('連続3日。');
-    expect(text).toContain('https://freddiefujiwara.com/xuexi');
   });
   it('連続0日なら連続行を出さない', () => {
     const text = buildShareText({ seconds: 0, streakDays: 0 });

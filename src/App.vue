@@ -164,14 +164,12 @@ onBeforeUnmount(() => {
 <template>
   <div>
     <nav class="site-nav">
-      <span class="brand">藤原史和｜川口を歩くQAエンジニア</span>
       <ul>
         <li><button type="button" :class="{ active: tab === 'cards' }" @click="tab = 'cards'">レッスンの復習</button></li>
         <li><button type="button" :class="{ active: tab === 'drill' }" @click="tab = 'drill'">疑問詞ドリル</button></li>
         <li><button type="button" :class="{ active: tab === 'vocab' }" @click="tab = 'vocab'">単語練習</button></li>
         <li><button type="button" :class="{ active: tab === 'record' }" @click="tab = 'record'">記録</button></li>
       </ul>
-      <div></div>
     </nav>
     <div class="layout">
       <header class="page-head">
