@@ -19,6 +19,7 @@ import {
   saveBuffer,
 } from './lib/study.js';
 
+const year = new Date().getFullYear();
 const tab = ref('cards');
 const loading = ref(true);
 const error = ref('');
@@ -153,41 +154,77 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="wrap">
-    <header>
-      <h1>学习 <span class="sub">中国語レッスンの復習</span></h1>
-      <p class="status">
-        <span v-if="doneToday">今日の分は実施済みです。</span>
-        <span v-else>今日の分はこれからです。</span>
-        <span v-if="streakDays > 0">連続 {{ streakDays }} 日</span>
-        <span> ・ 今日の勉強 {{ formatMinutes(todaySeconds) }} 分</span>
-      </p>
-    </header>
-
-    <nav class="tabs">
-      <button :class="{ active: tab === 'cards' }" @click="tab = 'cards'">今日の復習</button>
-      <button :class="{ active: tab === 'drill' }" @click="tab = 'drill'">疑問詞ドリル</button>
-      <button :class="{ active: tab === 'mistakes' }" @click="tab = 'mistakes'">間違いノート</button>
-      <button :class="{ active: tab === 'record' }" @click="tab = 'record'">記録</button>
+  <div>
+    <nav class="site-nav">
+      <a class="brand" href="https://freddiefujiwara.com/">藤原史和｜川口を歩くQAエンジニア</a>
+      <ul>
+        <li><a href="https://freddiefujiwara.com/">トップ</a></li>
+        <li class="nav-section"><a href="https://freddiefujiwara.com/#about">プロフィール</a></li>
+        <li class="nav-section"><a href="https://freddiefujiwara.com/#activity">活動・発信</a></li>
+        <li class="nav-section"><a href="https://freddiefujiwara.com/#contact">情報交換</a></li>
+        <li><a href="https://freddiefujiwara.com/blog/">ブログ</a></li>
+        <li><a href="https://freddiefujiwara.com/list-of-stuff/">持ち物リスト</a></li>
+        <li><a href="https://freddiefujiwara.com/music">川口の歌 ♪</a></li>
+      </ul>
+      <div></div>
     </nav>
+    <div class="layout">
+      <header class="page-head">
+        <p class="page-eyebrow">CHINESE STUDY</p>
+        <h1>中国語の復習</h1>
+        <p class="lead">マンツーマンレッスンの議事録から作った、そのまま使える例文で復習します。</p>
+        <p class="status">
+          <span v-if="doneToday">今日の分は実施済みです。</span>
+          <span v-else>今日の分はこれからです。</span>
+          <span v-if="streakDays > 0">連続 {{ streakDays }} 日</span>
+          <span> ・ 今日の勉強 {{ formatMinutes(todaySeconds) }} 分</span>
+        </p>
+      </header>
 
-    <p v-if="loading" class="panel center">読み込み中...</p>
-    <p v-else-if="error" class="panel center">{{ error }}</p>
-    <template v-else>
-      <ExerciseSession v-if="tab === 'cards'" :cards="dailyCards" :pool="data.cards" @finished="onFinished" />
-      <Drill v-else-if="tab === 'drill'" :drills="data.drills" @finished="onFinished" />
-      <Mistakes v-else-if="tab === 'mistakes'" :mistakes="data.mistakes" />
-      <StudyRecord
-        v-else
-        :study-log="data.studyLog || []"
-        :today-seconds="todaySeconds"
-        :streak-days="studyStreakDays"
-        @add-manual="onAddManual"
-      />
-    </template>
+      <nav class="tabs">
+        <button :class="{ active: tab === 'cards' }" @click="tab = 'cards'">今日の復習</button>
+        <button :class="{ active: tab === 'drill' }" @click="tab = 'drill'">疑問詞ドリル</button>
+        <button :class="{ active: tab === 'mistakes' }" @click="tab = 'mistakes'">間違いノート</button>
+        <button :class="{ active: tab === 'record' }" @click="tab = 'record'">記録</button>
+      </nav>
 
-    <footer>
+      <p v-if="loading" class="panel center">読み込み中...</p>
+      <p v-else-if="error" class="panel center">{{ error }}</p>
+      <template v-else>
+        <ExerciseSession v-if="tab === 'cards'" :cards="dailyCards" :pool="data.cards" @finished="onFinished" />
+        <Drill v-else-if="tab === 'drill'" :drills="data.drills" @finished="onFinished" />
+        <Mistakes v-else-if="tab === 'mistakes'" :mistakes="data.mistakes" />
+        <StudyRecord
+          v-else
+          :study-log="data.studyLog || []"
+          :today-seconds="todaySeconds"
+          :streak-days="studyStreakDays"
+          @add-manual="onAddManual"
+        />
+      </template>
+
       <p class="meta">データ：レッスン議事録から作ったカード（全 {{ data.cards.length }} 枚）</p>
-    </footer>
-  </main>
+
+      <footer class="site-footer">
+        <div class="foot-links">
+          <a href="https://freddiefujiwara.com/" target="_blank" rel="noopener">トップ <span class="arr">↗</span></a>
+          <a href="https://freddiefujiwara.com/blog/" target="_blank" rel="noopener">ブログ <span class="arr">↗</span></a>
+          <a href="https://freddiefujiwara.com/list-of-stuff/" target="_blank" rel="noopener">持ち物 <span class="arr">↗</span></a>
+          <a href="https://freddiefujiwara.com/bucket-list/" target="_blank" rel="noopener">バケットリスト <span class="arr">↗</span></a>
+          <a href="https://www.instagram.com/freddiefujiwara" target="_blank" rel="noopener">Instagram <span class="arr">↗</span></a>
+          <a href="https://www.facebook.com/freddiefujiwara" target="_blank" rel="noopener">Facebook <span class="arr">↗</span></a>
+          <a href="https://www.google.com/maps/contrib/105456242747265663411/reviews" target="_blank" rel="noopener">Googleマップの口コミ <span class="arr">↗</span></a>
+          <a href="https://review.travel.rakuten.co.jp/reviewer/fumikazufujiwara" target="_blank" rel="noopener">楽天トラベルの口コミ <span class="arr">↗</span></a>
+          <a href="https://tabelog.com/rvwr/zegenvs/" target="_blank" rel="noopener">食べログの口コミ <span class="arr">↗</span></a>
+          <a href="https://retty.me/user/50281/" target="_blank" rel="noopener">Rettyの口コミ <span class="arr">↗</span></a>
+          <a href="https://x.com/freddiefujiwara" target="_blank" rel="noopener">X <span class="arr">↗</span></a>
+          <a href="https://github.com/freddiefujiwara" target="_blank" rel="noopener">GitHub <span class="arr">↗</span></a>
+          <a href="https://linkedin.com/in/freddiefujiwara" target="_blank" rel="noopener">LinkedIn <span class="arr">↗</span></a>
+          <a href="https://youtrust.jp/users/freddiefujiwara" target="_blank" rel="noopener">YOUTRUST <span class="arr">↗</span></a>
+          <a href="https://fril.jp/shop/freddiefujiwara" target="_blank" rel="noopener">ラクマ <span class="arr">↗</span></a>
+        </div>
+        <p class="copy">© {{ year }} 藤原史和（Fumikazu Fujiwara）— freddiefujiwara.com</p>
+      </footer>
+    </div>
+  </div>
 </template>
