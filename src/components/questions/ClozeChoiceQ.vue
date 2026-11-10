@@ -45,8 +45,8 @@ function judge(option) {
 .options { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .option {
   text-align: left; padding: 12px; border-radius: 12px; font-size: 16px; cursor: pointer;
-  background: #fff; border: 1px solid #d8cfc2; color: #26221d;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
 }
-.option.correct { border-color: #1e6b1e; background: #eef7ee; }
-.option.wrongpick { border-color: #b3261e; background: #fbeeee; }
+.option.correct { border-color: var(--ok); background: var(--ok-bg); }
+.option.wrongpick { border-color: var(--error); background: color-mix(in srgb, var(--error) 8%, var(--surface)); }
 </style>
