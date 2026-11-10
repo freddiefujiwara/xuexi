@@ -41,20 +41,6 @@ const threadsIntent = computed(
   () => `https://www.threads.net/intent/post?text=${encodeURIComponent(shareTextValue.value)}`
 );
 
-async function shareText() {
-  shareNote.value = '';
-  if (navigator.share) {
-    try {
-      await navigator.share({ text: shareTextValue.value });
-      shareNote.value = '共有しました。';
-      return;
-    } catch (e) {
-      if (e && e.name === 'AbortError') return;
-    }
-  }
-  showShareFallback.value = true;
-}
-
 async function copyShareText() {
   try {
     await navigator.clipboard.writeText(shareTextValue.value);
@@ -65,8 +51,9 @@ async function copyShareText() {
   }
 }
 
-async function saveImage() {
+async function shareAll() {
   imageNote.value = '';
+  shareNote.value = '';
   try {
     const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const canvas = await buildShareCanvas({
@@ -78,10 +65,17 @@ async function saveImage() {
       dark,
       today,
     });
-    const how = await shareCanvasImage(canvas);
-    imageNote.value = how === 'shared' ? '共有しました。' : '画像をダウンロードしました。';
-  } catch {
-    imageNote.value = '画像を作れませんでした。';
+    const how = await shareCanvasImage(canvas, shareTextValue.value);
+    if (how === 'shared') {
+      imageNote.value = '共有しました。';
+    } else {
+      // 共有シートが無い環境では、画像を保存して投稿文の貼り付け先を出す。
+      imageNote.value = '画像をダウンロードしました。投稿文は下からどうぞ。';
+      showShareFallback.value = true;
+    }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    imageNote.value = '共有できませんでした。';
   }
 }
 </script>
@@ -117,8 +111,7 @@ async function saveImage() {
     <div class="answer">
       <p class="meta">SNS投稿用</p>
       <div class="row">
-        <button class="primary" @click="saveImage">画像で保存</button>
-        <button class="ghost" @click="shareText">投稿文を共有</button>
+        <button class="primary" @click="shareAll">画像と文を共有</button>
       </div>
       <p v-if="imageNote" class="hint">{{ imageNote }}</p>
       <p v-if="shareNote" class="hint">{{ shareNote }}</p>

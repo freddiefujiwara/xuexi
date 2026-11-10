@@ -115,13 +115,20 @@ export async function buildShareCanvas({ year, month, byDate, todaySeconds, stre
   return canvas;
 }
 
-export async function shareCanvasImage(canvas) {
+export async function shareCanvasImage(canvas, text = '') {
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
   if (!blob) throw new Error('画像を作れませんでした');
   const file = new File([blob], 'xuexi-record.png', { type: 'image/png' });
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    await navigator.share({ files: [file] });
-    return 'shared';
+  if (navigator.canShare) {
+    // 画像と投稿文をまとめて共有シートへ渡す（対応アプリなら一回で投稿できる）。
+    if (text && navigator.canShare({ files: [file], text })) {
+      await navigator.share({ files: [file], text });
+      return 'shared';
+    }
+    if (navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file] });
+      return 'shared';
+    }
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
