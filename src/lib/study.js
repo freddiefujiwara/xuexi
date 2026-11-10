@@ -64,12 +64,9 @@ export function monthSummary(year, month, byDate) {
 }
 
 // みんチャレ投稿用のテキスト。
-export const SHARE_URL = 'https://freddiefujiwara.com/xuexi';
-
 export function buildShareText({ seconds, streakDays }) {
-  const lines = [`「学习」で今日は${formatMinutes(seconds)}分学習しました。`];
+  const lines = [`中国語学習アプリ「学习」で今日は${formatMinutes(seconds)}分学習しました。`];
   if (streakDays > 0) lines.push(`連続${streakDays}日。`);
-  lines.push(SHARE_URL);
   return lines.join('\n');
 }
 
