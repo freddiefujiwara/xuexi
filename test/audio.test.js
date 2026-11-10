@@ -1,15 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { googleTtsUrl, playingText } from '../src/lib/audio.js';
+import { ttsApiUrl, decodeBase64ToBlob, playingText } from '../src/lib/audio.js';
 
 describe('audio helpers', () => {
-  it('Google TTS のURLを組み立てる', () => {
-    const url = googleTtsUrl('我平时搭电车上班。');
-    expect(url.startsWith('https://translate.google.com/translate_tts?')).toBe(true);
-    expect(url).toContain('tl=zh-CN');
-    expect(url).toContain(`q=${encodeURIComponent('我平时搭电车上班。')}`);
+  it('TTS取得URLは GAS の exec に text を付ける', () => {
+    const url = ttsApiUrl('我平时搭电车上班。');
+    expect(url).toContain(`?text=${encodeURIComponent('我平时搭电车上班。')}`);
   });
-  it('言語を指定できる', () => {
-    expect(googleTtsUrl('你好', 'zh-TW')).toContain('tl=zh-TW');
+  it('base64 を Blob に戻せる（/music と同方式）', async () => {
+    const blob = decodeBase64ToBlob(btoa('hello'), 'audio/mpeg');
+    expect(blob.type).toBe('audio/mpeg');
+    expect(blob.size).toBe(5);
+    const text = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsText(blob);
+    });
+    expect(text).toBe('hello');
   });
   it('初期状態は再生していない', () => {
     expect(playingText()).toBeNull();
