@@ -18,6 +18,26 @@ describe('selectDailyCards', () => {
   test('空なら空配列', () => {
     expect(selectDailyCards([])).toEqual([]);
   });
+  test('総数が上限未満なら全部返す', () => {
+    const few = Array.from({ length: 3 }, (_, i) => ({ id: `x${i}`, lesson: '2026-11-07' }));
+    expect(selectDailyCards(few, { total: 10, random: () => 0.5 })).toHaveLength(3);
+  });
+  test('直近が recentCount 未満なら古い分で補充する', () => {
+    const all = [
+      ...Array.from({ length: 3 }, (_, i) => ({ id: `n${i}`, lesson: '2026-11-07' })),
+      ...Array.from({ length: 10 }, (_, i) => ({ id: `o${i}`, lesson: '2026-10-17' })),
+    ];
+    const picked = selectDailyCards(all, { total: 10, recentCount: 7, random: () => 0.5 });
+    expect(picked).toHaveLength(10);
+    expect(picked.filter((c) => c.lesson === '2026-11-07')).toHaveLength(3);
+    expect(picked.filter((c) => c.lesson === '2026-10-17')).toHaveLength(7);
+  });
+  test('古いカードが無ければ直近の残りで補充し重複しない', () => {
+    const all = Array.from({ length: 12 }, (_, i) => ({ id: `n${i}`, lesson: '2026-11-07' }));
+    const picked = selectDailyCards(all, { total: 10, recentCount: 7, random: () => 0.5 });
+    expect(picked).toHaveLength(10);
+    expect(new Set(picked.map((c) => c.id)).size).toBe(10);
+  });
 });
 
 describe('shuffle', () => {
@@ -50,5 +70,21 @@ describe('progress', () => {
   });
   test('todayStr は YYYY-MM-DD', () => {
     expect(todayStr(new Date(2026, 10, 7))).toBe('2026-11-07');
+  });
+  test('markDone を2回呼んでも重複しない', () => {
+    const s = fakeStorage();
+    markDone(s, '2026-11-10');
+    markDone(s, '2026-11-10');
+    expect(loadDone(s)).toEqual(['2026-11-10']);
+  });
+  test('保存値が壊れていれば空として扱う', () => {
+    const s = fakeStorage();
+    s.setItem('xuexi:done', '{broken json');
+    expect(loadDone(s)).toEqual([]);
+    expect(isDoneToday(s, '2026-11-10')).toBe(false);
+  });
+  test('streak は今日だけ実施なら1', () => {
+    expect(streak(['2026-11-10'], '2026-11-10')).toBe(1);
+    expect(streak(['2026-11-09'], '2026-11-10')).toBe(1);
   });
 });
