@@ -73,11 +73,11 @@ export function buildMinchalleText({ date, seconds, streakDays }) {
   return lines.join('\n');
 }
 
-export async function postStudy(apiUrl, { date, seconds, source }) {
+export async function postStudy(apiUrl, { date, seconds, source, batchId }) {
   const res = await fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'addStudy', date, seconds, source }),
+    body: JSON.stringify({ action: 'addStudy', date, seconds, source, batchId: batchId || undefined }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
@@ -86,20 +86,63 @@ export async function postStudy(apiUrl, { date, seconds, source }) {
 }
 
 // 送信できなかった秒数を端末に退避する（次回に再送）。
+// 再送の二重加算を防ぐため、チャンクごとにバッチIDを持たせる。
+// 形式: { 'YYYY-MM-DD': [{ seconds, batchId }] }（旧形式の数値・単体オブジェクトも読める）
+export function newBatchId() {
+  return `b${Date.now().toString(36)}${Math.floor(Math.random() * 1e9).toString(36)}`;
+}
+
+function normalizeChunks(v) {
+  if (Array.isArray(v)) {
+    return v
+      .map((c) => (typeof c === 'number' ? { seconds: c, batchId: null } : { seconds: Number(c && c.seconds) || 0, batchId: (c && c.batchId) || null }))
+      .filter((c) => c.seconds > 0);
+  }
+  if (typeof v === 'number') return v > 0 ? [{ seconds: v, batchId: null }] : [];
+  if (v && typeof v === 'object' && Number(v.seconds) > 0) return [{ seconds: Number(v.seconds), batchId: v.batchId || null }];
+  return [];
+}
+
 export function loadPending(storage = localStorage) {
   try {
     const v = JSON.parse(storage.getItem(PENDING_KEY) || '{}');
-    return v && typeof v === 'object' ? v : {};
+    if (!v || typeof v !== 'object') return {};
+    const out = {};
+    for (const [date, chunks] of Object.entries(v)) {
+      const list = normalizeChunks(chunks);
+      if (list.length) out[date] = list;
+    }
+    return out;
   } catch {
     return {};
   }
 }
 
-export function addPending(seconds, storage = localStorage, date = todayStr()) {
+export function pendingSeconds(pending, date) {
+  return (pending[date] || []).reduce((sum, c) => sum + c.seconds, 0);
+}
+
+function savePending(pending, storage) {
+  const dates = Object.keys(pending).filter((d) => pending[d] && pending[d].length);
+  if (dates.length === 0) storage.removeItem(PENDING_KEY);
+  else storage.setItem(PENDING_KEY, JSON.stringify(pending));
+}
+
+export function addPending(seconds, storage = localStorage, date = todayStr(), batchId = null) {
   if (!seconds || seconds <= 0) return;
   const pending = loadPending(storage);
-  pending[date] = (pending[date] || 0) + seconds;
-  storage.setItem(PENDING_KEY, JSON.stringify(pending));
+  if (!pending[date]) pending[date] = [];
+  pending[date].push({ seconds, batchId });
+  savePending(pending, storage);
+}
+
+export function removePendingChunk(date, chunk, storage = localStorage) {
+  const pending = loadPending(storage);
+  const list = pending[date] || [];
+  const idx = list.findIndex((c) => c.seconds === chunk.seconds && c.batchId === chunk.batchId);
+  if (idx >= 0) list.splice(idx, 1);
+  pending[date] = list;
+  savePending(pending, storage);
 }
 
 export function clearPending(storage = localStorage) {
