@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import ReviewCards from './components/ReviewCards.vue';
+import ExerciseSession from './components/ExerciseSession.vue';
 import Drill from './components/Drill.vue';
 import Mistakes from './components/Mistakes.vue';
 import { API_URL } from './config.js';
@@ -65,7 +65,7 @@ onMounted(async () => {
     <p v-if="loading" class="panel center">読み込み中...</p>
     <p v-else-if="error" class="panel center">{{ error }}</p>
     <template v-else>
-      <ReviewCards v-if="tab === 'cards'" :cards="dailyCards" @finished="onFinished" />
+      <ExerciseSession v-if="tab === 'cards'" :cards="dailyCards" :pool="data.cards" @finished="onFinished" />
       <Drill v-else-if="tab === 'drill'" :drills="data.drills" @finished="onFinished" />
       <Mistakes v-else :mistakes="data.mistakes" />
     </template>
