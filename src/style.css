@@ -594,3 +594,8 @@ input.answer-input:focus {
   padding: 10px 12px;
   margin-top: 10px;
 }
+
+.audio-btn {
+  padding: 6px 14px;
+  font-size: 0.9rem;
+}

@@ -1,4 +1,6 @@
 <script setup>
+import AudioButton from './AudioButton.vue';
+
 defineProps({
   mistakes: { type: Array, default: () => [] },
 });
@@ -10,6 +12,7 @@ defineProps({
     <article v-for="m in mistakes" :key="m.id" class="mistake">
       <p class="wrong">✗ {{ m.wrong }}</p>
       <p class="right">○ {{ m.right }}</p>
+      <div class="row"><AudioButton :text="m.right" /></div>
       <p class="point">{{ m.point }}</p>
       <p class="meta">{{ m.source }}</p>
     </article>

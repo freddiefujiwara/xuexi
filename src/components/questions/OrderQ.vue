@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
+import AudioButton from '../AudioButton.vue';
 
 const props = defineProps({ q: { type: Object, required: true } });
 const emit = defineEmits(['done']);
@@ -51,6 +52,7 @@ function judge() {
       <p class="zh small">{{ q.card.zh }}</p>
       <div class="row">
         <button class="primary" @click="emit('done', ok)">次へ</button>
+        <AudioButton :text="q.card.zh" />
       </div>
     </div>
   </div>

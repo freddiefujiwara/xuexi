@@ -1,5 +1,7 @@
 <script setup>
 import { ref } from 'vue';
+import AudioButton from '../AudioButton.vue';
+
 
 const props = defineProps({ q: { type: Object, required: true } });
 const emit = defineEmits(['done']);
@@ -20,6 +22,7 @@ function judge(option) {
     <template v-else>
       <p class="zh">{{ q.prompt }}</p>
       <p class="pinyin">{{ q.card.pinyin }}</p>
+      <div class="row"><AudioButton :text="q.card.zh" /></div>
     </template>
     <p class="meta">正しいものを選んでください。</p>
     <div class="options">
@@ -40,6 +43,7 @@ function judge(option) {
       <p>{{ q.card.ja }}</p>
       <div class="row">
         <button class="primary" @click="emit('done', ok)">次へ</button>
+        <AudioButton :text="q.card.zh" />
       </div>
     </div>
   </div>
