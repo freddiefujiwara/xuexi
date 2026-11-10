@@ -1,0 +1,90 @@
+<script setup>
+import { computed, ref } from 'vue';
+import { buildCalendar, buildMinchalleText, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
+import { todayStr } from '../lib/progress.js';
+
+const props = defineProps({
+  studyLog: { type: Array, default: () => [] },
+  todaySeconds: { type: Number, default: 0 },
+  streakDays: { type: Number, default: 0 },
+});
+const emit = defineEmits(['add-manual']);
+
+const now = new Date();
+const viewYear = ref(now.getFullYear());
+const viewMonth = ref(now.getMonth() + 1);
+const copied = ref(false);
+const showText = ref(false);
+
+const byDate = computed(() => logByDate(props.studyLog));
+const cells = computed(() => buildCalendar(viewYear.value, viewMonth.value, byDate.value));
+const summary = computed(() => monthSummary(viewYear.value, viewMonth.value, byDate.value));
+const today = todayStr();
+const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+
+const shareText = computed(() =>
+  buildMinchalleText({ date: today, seconds: props.todaySeconds, streakDays: props.streakDays })
+);
+
+function moveMonth(delta) {
+  const d = new Date(viewYear.value, viewMonth.value - 1 + delta, 1);
+  viewYear.value = d.getFullYear();
+  viewMonth.value = d.getMonth() + 1;
+}
+
+async function copyText() {
+  try {
+    await navigator.clipboard.writeText(shareText.value);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 2000);
+  } catch {
+    showText.value = true;
+  }
+}
+</script>
+
+<template>
+  <section class="panel">
+    <p class="big">今日の勉強 {{ formatMinutes(todaySeconds) }} 分</p>
+    <p class="meta">連続 {{ streakDays }} 日。このアプリで学習した時間は自動で記録されます。</p>
+
+    <div class="row">
+      <button class="ghost" @click="emit('add-manual', 5)">+5分</button>
+      <button class="ghost" @click="emit('add-manual', 10)">+10分</button>
+      <button class="ghost" @click="emit('add-manual', 15)">+15分</button>
+    </div>
+    <p class="hint">レッスンや他の方法で勉強した分は、ボタンで足せます。</p>
+
+    <div class="cal-head">
+      <button class="ghost cal-nav" @click="moveMonth(-1)">←</button>
+      <p class="cal-title">{{ viewYear }}年{{ viewMonth }}月</p>
+      <button class="ghost cal-nav" @click="moveMonth(1)">→</button>
+    </div>
+    <div class="cal-grid cal-week">
+      <span v-for="w in weekdays" :key="w" class="cal-wd">{{ w }}</span>
+    </div>
+    <div class="cal-grid">
+      <div
+        v-for="(cell, i) in cells"
+        :key="i"
+        class="cal-cell"
+        :class="[cell ? `lv${cell.level}` : 'empty', cell && cell.date === today ? 'today' : '']"
+      >
+        <template v-if="cell">
+          <span class="cal-day">{{ cell.day }}</span>
+          <span v-if="cell.seconds > 0" class="cal-min">{{ formatMinutes(cell.seconds) }}分</span>
+        </template>
+      </div>
+    </div>
+    <p class="meta">今月は {{ summary.days }} 日、合計 {{ formatMinutes(summary.seconds) }} 分勉強しました。</p>
+
+    <div class="answer">
+      <p class="meta">みんチャレ投稿用テキスト</p>
+      <div class="row">
+        <button class="primary" @click="copyText">{{ copied ? 'コピーしました' : '今日の記録をコピー' }}</button>
+        <button class="ghost" @click="showText = !showText">テキストを見る</button>
+      </div>
+      <textarea v-if="showText" class="share-text" readonly rows="3" :value="shareText"></textarea>
+    </div>
+  </section>
+</template>
