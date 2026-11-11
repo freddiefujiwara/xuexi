@@ -1,6 +1,6 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { audioState, playingText, speakChinese, subscribeAudio } from '../lib/audio.js';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { audioState, buttonFace, playingText, speakChinese, subscribeAudio } from '../lib/audio.js';
 
 const props = defineProps({
   text: { type: String, default: '' },
@@ -8,6 +8,9 @@ const props = defineProps({
 });
 
 const state = ref(null);
+const face = computed(() => buttonFace(state.value));
+// /blog の音楽プレイヤーと同じく、読み込み中は名前も「読み込み中」にする。
+const effectiveLabel = computed(() => (state.value === 'loading' ? '読み込み中' : props.label));
 let unsubscribe = null;
 
 function sync(current) {
@@ -29,12 +32,13 @@ onBeforeUnmount(() => {
     type="button"
     class="audio-btn"
     :class="{ loading: state === 'loading' }"
-    :aria-label="label"
-    :title="label"
+    :aria-label="effectiveLabel"
+    :title="effectiveLabel"
     @click="speakChinese(text)"
   >
-    <svg viewBox="0 0 24 24" class="audio-ico" aria-hidden="true">
-      <path :d="state === 'playing' ? 'M6 5h4v14H6zM14 5h4v14h-4z' : 'M8 5v14l11-7z'" />
+    <span v-if="face === 'dots'" class="audio-dots" aria-hidden="true">…</span>
+    <svg v-else viewBox="0 0 24 24" class="audio-ico" aria-hidden="true">
+      <path :d="face === 'pause' ? 'M6 5h4v14H6zM14 5h4v14h-4z' : 'M8 5v14l11-7z'" />
     </svg>
   </button>
 </template>

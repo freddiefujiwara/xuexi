@@ -39,6 +39,13 @@ export function subscribeAudio(fn) {
   return () => listeners.delete(fn);
 }
 
+// /blog の音楽プレイヤーと同じく、読み込み中はボタンの顔を「…」にする。
+export function buttonFace(state) {
+  if (state === 'loading') return 'dots';
+  if (state === 'playing') return 'pause';
+  return 'play';
+}
+
 export function playingText() {
   return activeText;
 }

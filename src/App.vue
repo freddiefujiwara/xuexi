@@ -20,6 +20,7 @@ import {
   studyLogEntries,
 } from './lib/study.js';
 import { tabFromPath, tabHrefs } from './lib/nav.js';
+import { fetchSection, sectionForTab } from './lib/data.js';
 
 const year = new Date().getFullYear();
 const PAGE_HEADS = {
@@ -32,7 +33,7 @@ const tab = ref(tabFromPath(location.pathname));
 const hrefs = tabHrefs(location.pathname);
 const loading = ref(true);
 const error = ref('');
-const data = ref({ cards: [], drills: [], words: [], studyLog: [] });
+const data = ref({ cards: [], drills: [], words: [] });
 const doneDates = ref(loadDone());
 const transferNote = ref('');
 const doneToday = ref(false);
@@ -111,15 +112,17 @@ onMounted(async () => {
     loading.value = false;
     return;
   }
-  try {
-    const res = await fetch(API_URL, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    data.value = await res.json();
-  } catch (e) {
-    error.value = `データを読み込めませんでした（${e.message}）。時間をおいて開き直してください。`;
-  } finally {
-    loading.value = false;
+  // タブごとに必要なセクションだけ取る（記録タブは取得自体をしない）。
+  const section = sectionForTab(tab.value);
+  if (section) {
+    try {
+      const result = await fetchSection(section);
+      data.value = { ...data.value, [section]: result.rows };
+    } catch (e) {
+      error.value = `データを読み込めませんでした（${e.message}）。時間をおいて開き直してください。`;
+    }
   }
+  loading.value = false;
   // サーバー保存だった頃の履歴を一度だけ端末へ取り込む（取得できた時だけ）。
   if (!error.value) {
     localLog.value = importServerStudyLog(data.value.studyLog);
@@ -188,7 +191,7 @@ onBeforeUnmount(() => {
         />
       </template>
 
-      <p class="meta">データ：レッスン議事録から作ったカード（全 {{ data.cards.length }} 枚）</p>
+      <p v-if="tab === 'cards'" class="meta">データ：レッスン議事録から作ったカード（全 {{ data.cards.length }} 枚）</p>
 
       <footer class="site-footer">
         <div class="foot-links">
