@@ -1,16 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import {
-  addPending,
+  addStudySeconds,
   buildCalendar,
   buildShareText,
-  clearPending,
+  clearStudyLog,
   formatMinutes,
-  loadPending,
+  importServerStudyLog,
+  loadStudyLog,
   logByDate,
-  pendingSeconds,
-  removePendingChunk,
   monthSummary,
   studyLevel,
+  decodeTransfer,
+  encodeTransfer,
+  mergeTransferLog,
+  studyLogEntries,
 } from '../src/lib/study.js';
 
 function fakeStorage() {
@@ -78,45 +81,46 @@ describe('buildShareText', () => {
   });
 });
 
-describe('pending', () => {
-  it('未送信分をチャンク（バッチID付き）で貯め、成功分だけ消せる', () => {
+describe('study log (localStorage)', () => {
+  it('秒数を日次合計へ加算して保存する', () => {
     const storage = fakeStorage();
-    addPending(120, storage, '2026-11-10', 'b1');
-    addPending(60, storage, '2026-11-10', 'b2');
-    addPending(30, storage, '2026-11-09');
-    expect(loadPending(storage)).toEqual({
-      '2026-11-10': [
-        { seconds: 120, batchId: 'b1' },
-        { seconds: 60, batchId: 'b2' },
-      ],
-      '2026-11-09': [{ seconds: 30, batchId: null }],
-    });
-    expect(pendingSeconds(loadPending(storage), '2026-11-10')).toBe(180);
-    removePendingChunk('2026-11-10', { seconds: 120, batchId: 'b1' }, storage);
-    expect(pendingSeconds(loadPending(storage), '2026-11-10')).toBe(60);
-    clearPending(storage);
-    expect(loadPending(storage)).toEqual({});
+    addStudySeconds(300, storage, '2026-11-11');
+    const log = addStudySeconds(120, storage, '2026-11-11');
+    expect(log).toEqual({ '2026-11-11': 420 });
+    expect(loadStudyLog(storage)).toEqual({ '2026-11-11': 420 });
   });
-
-  it('旧形式（日付→秒数）も読み込める', () => {
+  it('削除すると空になる', () => {
     const storage = fakeStorage();
-    storage.setItem('xuexi:pending-study', JSON.stringify({ '2026-11-10': 180 }));
-    expect(loadPending(storage)).toEqual({ '2026-11-10': [{ seconds: 180, batchId: null }] });
+    addStudySeconds(300, storage, '2026-11-11');
+    clearStudyLog(storage);
+    expect(loadStudyLog(storage)).toEqual({});
+  });
+  it('エントリ配列は日付順', () => {
+    expect(studyLogEntries({ '2026-11-11': 60, '2026-11-01': 30 })).toEqual([
+      { date: '2026-11-01', seconds: 30 },
+      { date: '2026-11-11', seconds: 60 },
+    ]);
   });
 });
 
-describe('session buffer', () => {
-  it('計測中の秒数を退避して読み戻せる', async () => {
-    const { saveBuffer, loadBuffer, clearBuffer } = await import('../src/lib/study.js');
+describe('importServerStudyLog', () => {
+  it('サーバー履歴＋未送信分＋退避分を合算して一度だけ取り込む', () => {
     const storage = fakeStorage();
-    expect(loadBuffer(storage)).toBeNull();
-    saveBuffer(42, storage, '2026-11-10');
-    expect(loadBuffer(storage)).toEqual({ date: '2026-11-10', seconds: 42 });
-    saveBuffer(0, storage, '2026-11-10');
-    expect(loadBuffer(storage)).toBeNull();
-    saveBuffer(10, storage, '2026-11-10');
-    clearBuffer(storage);
-    expect(loadBuffer(storage)).toBeNull();
+    storage.setItem('xuexi:pending-study', JSON.stringify({ '2026-11-11': [{ seconds: 90, batchId: 'b1' }] }));
+    storage.setItem('xuexi:session-buffer', JSON.stringify({ date: '2026-11-11', seconds: 30 }));
+    const merged = importServerStudyLog(
+      [
+        { date: '2026-11-10', seconds: 600 },
+        { date: '2026-11-11', seconds: 300 },
+      ],
+      storage
+    );
+    expect(merged).toEqual({ '2026-11-10': 600, '2026-11-11': 420 });
+    expect(storage.getItem('xuexi:pending-study')).toBeNull();
+    expect(storage.getItem('xuexi:session-buffer')).toBeNull();
+    // 2回目は取り込まない
+    const again = importServerStudyLog([{ date: '2026-11-11', seconds: 9999 }], storage);
+    expect(again).toEqual({ '2026-11-10': 600, '2026-11-11': 420 });
   });
 });
 
@@ -125,5 +129,26 @@ describe('isCountingActive', () => {
     const { isCountingActive } = await import('../src/lib/study.js');
     expect(isCountingActive(1000, 1000 + 179000)).toBe(true);
     expect(isCountingActive(1000, 1000 + 181000)).toBe(false);
+  });
+});
+
+describe('transfer link', () => {
+  it('エンコード→デコードで往復する', () => {
+    const enc = encodeTransfer({ '2026-11-10': 600, '2026-11-11': 420 }, ['2026-11-10', '2026-11-11']);
+    expect(enc).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(decodeTransfer(enc)).toEqual({
+      log: { '2026-11-10': 600, '2026-11-11': 420 },
+      done: ['2026-11-10', '2026-11-11'],
+    });
+  });
+  it('壊れたリンクは null', () => {
+    expect(decodeTransfer('zzzz')).toBeNull();
+    expect(decodeTransfer('')).toBeNull();
+  });
+  it('合体は同じ日に大きい方を残す', () => {
+    expect(mergeTransferLog({ '2026-11-11': 100 }, { '2026-11-11': 420, '2026-11-10': 60 })).toEqual({
+      '2026-11-11': 420,
+      '2026-11-10': 60,
+    });
   });
 });

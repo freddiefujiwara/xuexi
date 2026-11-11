@@ -1,13 +1,16 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { buildCalendar, buildShareText, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
+import { buildCalendar, buildShareText, encodeTransfer, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
 import { buildShareCanvas, prefersShareSheet, shareCanvasImage } from '../lib/shareImage.js';
 import { todayStr } from '../lib/progress.js';
+
+const emit = defineEmits(['clear-records']);
 
 const props = defineProps({
   studyLog: { type: Array, default: () => [] },
   todaySeconds: { type: Number, default: 0 },
   streakDays: { type: Number, default: 0 },
+  doneDates: { type: Array, default: () => [] },
 });
 
 const now = new Date();
@@ -24,6 +27,35 @@ function moveMonth(delta) {
   const d = new Date(viewYear.value, viewMonth.value - 1 + delta, 1);
   viewYear.value = d.getFullYear();
   viewMonth.value = d.getMonth() + 1;
+}
+
+const clearedNote = ref('');
+
+function onClearRecords() {
+  if (!window.confirm('学習記録（勉強時間と実施日）をすべて削除します。元に戻せません。よろしいですか？')) return;
+  emit('clear-records');
+  clearedNote.value = '学習記録を削除しました。';
+}
+
+const transferUrl = ref('');
+const transferCopied = ref(false);
+
+function makeTransferLink() {
+  const entries = props.studyLog || [];
+  const log = {};
+  for (const row of entries) if (row && row.date) log[row.date] = Number(row.seconds) || 0;
+  const encoded = encodeTransfer(log, props.doneDates);
+  transferUrl.value = `https://freddiefujiwara.com/xuexi/record/#import=${encoded}`;
+}
+
+async function copyTransferLink() {
+  try {
+    await navigator.clipboard.writeText(transferUrl.value);
+    transferCopied.value = true;
+    setTimeout(() => (transferCopied.value = false), 2000);
+  } catch {
+    shareNote.value = 'コピーできませんでした。リンクを長押しでコピーしてください。';
+  }
 }
 
 const imageNote = ref('');
@@ -175,10 +207,38 @@ async function shareAll() {
         </div>
       </div>
     </div>
+
+    <div class="answer">
+      <p class="meta">別の端末への引き継ぎ</p>
+      <div class="row">
+        <button class="ghost" @click="makeTransferLink">引き継ぎリンクを作る</button>
+      </div>
+      <p class="hint">リンクを開いた端末に、今の学習記録を取り込みます。記録そのものがリンクに入っているので、扱いはパスワードと同じにお願いします。</p>
+      <div v-if="transferUrl">
+        <textarea class="share-text" readonly rows="3" :value="transferUrl"></textarea>
+        <div class="row">
+          <button class="ghost" @click="copyTransferLink">{{ transferCopied ? 'コピーしました' : 'リンクをコピー' }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="danger-zone">
+      <button class="ghost danger" @click="onClearRecords">学習記録を削除する</button>
+      <p v-if="clearedNote" class="hint">{{ clearedNote }}</p>
+    </div>
   </section>
 </template>
 
 <style scoped>
+.danger-zone {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+button.danger {
+  color: var(--link);
+  border-color: var(--link);
+}
 .share-row {
   display: flex;
   flex-wrap: wrap;

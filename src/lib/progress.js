@@ -30,6 +30,18 @@ export function markDone(storage = localStorage, date = todayStr()) {
   return done;
 }
 
+export function mergeDone(dates, storage = localStorage) {
+  const done = loadDone(storage);
+  for (const d of dates || []) if (!done.includes(d)) done.push(d);
+  done.sort();
+  storage.setItem(DONE_KEY, JSON.stringify(done));
+  return done;
+}
+
+export function clearDone(storage = localStorage) {
+  storage.removeItem(DONE_KEY);
+}
+
 export function isDoneToday(storage = localStorage, date = todayStr()) {
   return loadDone(storage).includes(date);
 }
