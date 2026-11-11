@@ -37,6 +37,9 @@ const firstTryTotal = ref(queue.value.length);
 const firstTryCorrect = ref(0);
 
 const current = computed(() => queue.value[index.value] || null);
+const progressPct = computed(() =>
+  firstTryTotal.value > 0 ? Math.min(100, Math.round((seenCount.value / firstTryTotal.value) * 100)) : 0
+);
 const finished = computed(() => !current.value);
 
 // lesson は '2026-11-07' でも ISO 日時でも来るので先頭10文字でそろえる。
@@ -68,11 +71,15 @@ function onDone(ok) {
       <p v-if="firstTryTotal > 0" class="meta">一発で正解 {{ firstTryCorrect }} / {{ firstTryTotal }} 問</p>
     </div>
     <div v-else class="panel">
-      <p class="meta">
-        {{ seenCount + 1 }} 問目 ・ {{ LABELS[current.type] }} ・
-        {{ lessonLabel(current.card.lesson) }} のレッスン（{{ current.card.pillar }}）
-        <span v-if="round > 0"> ・ 再挑戦</span>
-      </p>
+      <div class="sess-head">
+        <span class="tag">{{ LABELS[current.type] }}</span>
+        <span class="tag gray">{{ lessonLabel(current.card.lesson) }} のレッスン ・ {{ current.card.pillar }}</span>
+        <span v-if="round > 0" class="tag">再挑戦</span>
+      </div>
+      <div v-if="round === 0" class="prog">
+        <div class="prog-row"><span>進み具合</span><span><b>{{ seenCount }}</b> / {{ firstTryTotal }} 問</span></div>
+        <div class="bar"><i :style="{ width: progressPct + '%' }"></i></div>
+      </div>
       <component
         :is="COMPONENTS[current.type]"
         :key="`${round}-${index}`"

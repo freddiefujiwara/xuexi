@@ -35,7 +35,7 @@ function judge(option) {
       </button>
     </div>
     <div v-if="ok !== null" class="answer">
-      <p :class="ok ? 'right' : 'wrong'">{{ ok ? '正解！' : '不正解…' }}</p>
+      <p class="verdict" :class="ok ? 'ok' : 'ng'">{{ ok ? '✓ 正解！' : '✗ 不正解…' }}</p>
       <p class="zh small">{{ q.card.zh }}</p>
       <p class="pinyin">{{ q.card.pinyin }}</p>
       <p>{{ q.card.ja }}</p>
@@ -48,11 +48,13 @@ function judge(option) {
 </template>
 
 <style scoped>
-.options { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.options { display: flex; flex-direction: column; gap: 9px; margin-top: 10px; }
 .option {
-  text-align: left; padding: 12px; border-radius: 12px; font-size: 16px; cursor: pointer;
-  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  text-align: left; padding: 14px 16px; border-radius: 14px; font-size: 16px; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--border); color: var(--text);
+  box-shadow: var(--shadow-sm);
 }
+.option:hover { border-color: var(--link); }
 .option.correct { border-color: var(--ok); background: var(--ok-bg); }
 .option.wrongpick { border-color: var(--error); background: color-mix(in srgb, var(--error) 8%, var(--surface)); }
 </style>

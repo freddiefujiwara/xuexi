@@ -22,6 +22,12 @@ import {
 import { tabFromPath, tabHrefs } from './lib/nav.js';
 
 const year = new Date().getFullYear();
+const PAGE_HEADS = {
+  cards: { title: 'レッスンの復習', lead: 'レッスンで学んだことの復習' },
+  drill: { title: '疑問詞ドリル', lead: '疑問詞の質問に、中国語で答える練習' },
+  vocab: { title: '単語練習', lead: '日本語訳を見て、中国語を答える練習' },
+  record: { title: '学習の記録', lead: '勉強時間と実施日の記録' },
+};
 const tab = ref(tabFromPath(location.pathname));
 const hrefs = tabHrefs(location.pathname);
 const loading = ref(true);
@@ -134,17 +140,29 @@ onBeforeUnmount(() => {
 <template>
   <div>
     <nav class="site-nav">
+      <a class="brand" :href="hrefs.cards" aria-label="学习 トップへ">
+        <span class="brand-mark">学</span>
+        <span class="brand-text">
+          <span class="brand-name">学习</span>
+          <span class="brand-sub">中国語の復習</span>
+        </span>
+      </a>
       <ul>
         <li><a :href="hrefs.cards" :class="{ active: tab === 'cards' }">レッスンの復習</a></li>
         <li><a :href="hrefs.drill" :class="{ active: tab === 'drill' }">疑問詞ドリル</a></li>
         <li><a :href="hrefs.vocab" :class="{ active: tab === 'vocab' }">単語練習</a></li>
         <li><a :href="hrefs.record" :class="{ active: tab === 'record' }">記録</a></li>
       </ul>
+      <span v-if="streakDays > 0" class="streak-pill">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4.4 0 7.5-3 7.5-7.3 0-3.2-2-5.4-3.4-7.5-.4 1-1 1.8-2 2.3.3-2.9-.6-6.4-3.1-8.5C10.3 7.6 4.5 10.7 4.5 14.7 4.5 19 7.6 22 12 22z"/></svg>
+        連続 {{ streakDays }} 日
+      </span>
+      <span v-else></span>
     </nav>
     <div class="layout">
       <header class="page-head">
-        <h1>学习</h1>
-        <p class="lead">レッスンで学んだことの復習</p>
+        <h1>{{ PAGE_HEADS[tab].title }}</h1>
+        <p class="lead">{{ PAGE_HEADS[tab].lead }}</p>
         <p v-if="transferNote" class="status">{{ transferNote }}</p>
         <p class="status">
           <span v-if="doneToday">今日の分は実施済みです。</span>
@@ -154,7 +172,7 @@ onBeforeUnmount(() => {
         </p>
       </header>
 
-      <p v-if="loading" class="panel center">読み込み中...</p>
+      <p v-if="loading" class="panel center"><span class="spinner"></span>読み込み中...</p>
       <p v-else-if="error" class="panel center">{{ error }}</p>
       <template v-else>
         <ExerciseSession v-if="tab === 'cards'" :cards="dailyCards" :pool="data.cards" @finished="onFinished" />
@@ -179,5 +197,23 @@ onBeforeUnmount(() => {
         <p class="copy">© {{ year }} freddiefujiwara.com</p>
       </footer>
     </div>
+    <nav class="tabbar" aria-label="メインメニュー">
+      <a :href="hrefs.cards" :class="{ active: tab === 'cards' }">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z"/></svg>
+        復習
+      </a>
+      <a :href="hrefs.drill" :class="{ active: tab === 'drill' }">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        ドリル
+      </a>
+      <a :href="hrefs.vocab" :class="{ active: tab === 'vocab' }">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        単語
+      </a>
+      <a :href="hrefs.record" :class="{ active: tab === 'record' }">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        記録
+      </a>
+    </nav>
   </div>
 </template>

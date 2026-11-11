@@ -158,9 +158,15 @@ async function shareAll() {
 </script>
 
 <template>
+  <div class="hero">
+    <p class="hero-label">今日の勉強</p>
+    <p class="hero-big">{{ formatMinutes(todaySeconds) }}<span class="unit">分</span></p>
+    <div class="hero-row">
+      <span class="hero-pill">連続 {{ streakDays }} 日</span>
+      <span>{{ todaySeconds > 0 ? '今日も勉強しました' : '今日はこれからです' }}</span>
+    </div>
+  </div>
   <section class="panel">
-    <p class="big">今日の勉強 {{ formatMinutes(todaySeconds) }} 分</p>
-    <p class="meta">連続 {{ streakDays }} 日</p>
 
     <div class="cal-head">
       <button class="ghost cal-nav" @click="moveMonth(-1)">←</button>
@@ -186,7 +192,7 @@ async function shareAll() {
     <p class="meta">今月は {{ summary.days }} 日、合計 {{ formatMinutes(summary.seconds) }} 分勉強しました。</p>
 
     <div class="answer">
-      <p class="meta">SNS投稿用</p>
+      <p class="sec-title">SNS投稿用</p>
       <div v-if="sheetMode" class="row">
         <button class="primary" @click="shareAll">学習記録をSNSに共有</button>
         <button class="ghost" @click="saveImageOnly">画像で保存</button>
@@ -209,7 +215,7 @@ async function shareAll() {
     </div>
 
     <div class="answer">
-      <p class="meta">別の端末への引き継ぎ</p>
+      <p class="sec-title">別の端末への引き継ぎ</p>
       <div class="row">
         <button class="ghost" @click="makeTransferLink">引き継ぎリンクを作る</button>
       </div>

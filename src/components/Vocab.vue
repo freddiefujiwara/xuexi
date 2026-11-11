@@ -105,8 +105,8 @@ function next() {
         <button v-if="answered === null" class="primary" :disabled="!input.trim()" @click="judge">答え合わせ</button>
       </div>
       <div v-if="answered !== null" class="answer">
-        <p :class="answered ? 'right' : 'wrong'">
-          {{ answered ? '正解！' : `不正解…（あなた：${input}）` }}
+        <p class="verdict" :class="answered ? 'ok' : 'ng'">
+          {{ answered ? '✓ 正解！' : `✗ 不正解…（あなた：${input}）` }}
         </p>
         <p class="zh">{{ current.zh }}</p>
         <p class="pinyin">{{ current.pinyin }}</p>
@@ -130,13 +130,13 @@ function next() {
 <style scoped>
 .chips { flex-wrap: wrap; gap: 6px; }
 .chip {
-  padding: 6px 12px; border-radius: 999px; font-size: 0.9rem; cursor: pointer;
-  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 14px; border-radius: 999px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--border); color: var(--text);
 }
-.chip.active { border-color: var(--link-active); color: var(--link-active); }
+.chip.active { background: var(--surface-elevated); border-color: var(--link); color: var(--link-active); }
 .vocab-ja { font-size: 26px; font-weight: 700; margin: 14px 0 10px; }
 .vocab-input {
-  flex: 2; padding: 12px; border-radius: 12px; font-size: 16px;
+  flex: 2; padding: 12px; border-radius: 14px; font-size: 16px;
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
 }
 </style>
