@@ -30,6 +30,10 @@ export function markDone(storage = localStorage, date = todayStr()) {
   return done;
 }
 
+export function clearDone(storage = localStorage) {
+  storage.removeItem(DONE_KEY);
+}
+
 export function isDoneToday(storage = localStorage, date = todayStr()) {
   return loadDone(storage).includes(date);
 }

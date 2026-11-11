@@ -6,21 +6,15 @@ import Vocab from './components/Vocab.vue';
 import StudyRecord from './components/StudyRecord.vue';
 import { API_URL } from './config.js';
 import { selectDailyCards } from './lib/select.js';
-import { isDoneToday, loadDone, markDone, streak, todayStr } from './lib/progress.js';
+import { clearDone, isDoneToday, loadDone, markDone, streak, todayStr } from './lib/progress.js';
 import {
-  addPending,
-  clearBuffer,
-  clearPending,
+  addStudySeconds,
+  clearStudyLog,
   formatMinutes,
-  loadBuffer,
-  loadPending,
-  logByDate,
-  postStudy,
-  saveBuffer,
+  importServerStudyLog,
   isCountingActive,
-  newBatchId,
-  pendingSeconds,
-  removePendingChunk,
+  loadStudyLog,
+  studyLogEntries,
 } from './lib/study.js';
 import { tabFromPath, tabHrefs } from './lib/nav.js';
 
@@ -32,8 +26,8 @@ const error = ref('');
 const data = ref({ cards: [], drills: [], mistakes: [], words: [], studyLog: [] });
 const doneToday = ref(false);
 const streakDays = ref(0);
-// サーバー未送信の学習秒数（この画面で計測中＋前回の退避分）。
-const unsentSeconds = ref(0);
+// 学習記録は端末ローカル（localStorage）に日次合計で持つ。
+const localLog = ref(loadStudyLog());
 let accumulated = 0;
 let timer = null;
 let lastInteractionAt = Date.now();
@@ -45,10 +39,9 @@ function noteInteraction() {
 const INTERACTION_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
 
 const dailyCards = computed(() => selectDailyCards(data.value.cards));
-const studyByDate = computed(() => logByDate(data.value.studyLog));
-const todaySeconds = computed(
-  () => (studyByDate.value[todayStr()] || 0) + unsentSeconds.value
-);
+const studyByDate = computed(() => localLog.value);
+const studyEntries = computed(() => studyLogEntries(localLog.value));
+const todaySeconds = computed(() => localLog.value[todayStr()] || 0);
 const studyStreakDays = computed(() =>
   streak(Object.keys(studyByDate.value).filter((d) => studyByDate.value[d] > 0))
 );
@@ -63,51 +56,22 @@ function onFinished() {
   refreshProgress();
 }
 
-function applyStudyTotal(date, totalSeconds) {
-  const log = [...(data.value.studyLog || [])];
-  const idx = log.findIndex((r) => r.date === date);
-  if (idx >= 0) log[idx] = { date, seconds: totalSeconds };
-  else log.push({ date, seconds: totalSeconds });
-  data.value = { ...data.value, studyLog: log };
-}
-
-async function flushStudy() {
-  if (!API_URL || accumulated <= 0) return;
-  const seconds = accumulated;
+// 計測した秒数を端末ローカルの記録へ確定する。
+function commitStudy() {
+  if (accumulated <= 0) return;
+  localLog.value = addStudySeconds(accumulated);
   accumulated = 0;
-  clearBuffer();
-  const batchId = newBatchId();
-  try {
-    const json = await postStudy(API_URL, { date: todayStr(), seconds, source: 'auto', batchId });
-    unsentSeconds.value = Math.max(0, unsentSeconds.value - seconds);
-    applyStudyTotal(json.date, json.totalSeconds);
-  } catch {
-    // 応答が失われても、同じバッチIDで再送するのでサーバー側で二重加算されない。
-    addPending(seconds, localStorage, todayStr(), batchId);
-  }
 }
 
-async function flushPending() {
-  if (!API_URL) return;
-  const pending = loadPending();
-  for (const date of Object.keys(pending)) {
-    for (const chunk of [...pending[date]]) {
-      try {
-        const json = await postStudy(API_URL, { date, seconds: chunk.seconds, source: 'auto', batchId: chunk.batchId });
-        applyStudyTotal(json.date, json.totalSeconds);
-        removePendingChunk(date, chunk);
-        if (date === todayStr()) {
-          unsentSeconds.value = Math.max(0, unsentSeconds.value - chunk.seconds);
-        }
-      } catch {
-        // 失敗したチャンクは残す（成功分はその場で取り除く）。
-      }
-    }
-  }
+function onClearRecords() {
+  clearStudyLog();
+  clearDone();
+  localLog.value = {};
+  refreshProgress();
 }
 
 function onVisibility() {
-  if (document.visibilityState === 'hidden') flushStudy();
+  if (document.visibilityState === 'hidden') commitStudy();
 }
 
 onMounted(async () => {
@@ -126,40 +90,19 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-  // 前回、閉じる前に退避した計測分を未送信分へ寄せる。
-  const buffer = loadBuffer();
-  if (buffer) {
-    addPending(buffer.seconds, localStorage, buffer.date);
-    clearBuffer();
+  // サーバー保存だった頃の履歴を一度だけ端末へ取り込む（取得できた時だけ）。
+  if (!error.value) {
+    localLog.value = importServerStudyLog(data.value.studyLog);
   }
-  const pending = loadPending();
-  unsentSeconds.value = pendingSeconds(pending, todayStr());
-  await flushPending();
-  // 学習タブを開いている間だけ、画面が見えている時間を計測する。
-  for (const ev of INTERACTION_EVENTS) window.addEventListener(ev, noteInteraction, { passive: true });
-  timer = setInterval(() => {
-    if (document.visibilityState !== 'visible') return;
-    if (!['cards', 'drill', 'vocab'].includes(tab.value)) return;
-    // 開きっぱなしの画面（操作なし3分超・非フォーカス）は数えない。
-    if (typeof document.hasFocus === 'function' && !document.hasFocus()) return;
-    if (!isCountingActive(lastInteractionAt, Date.now())) {
-      if (accumulated > 0) flushStudy();
-      return;
-    }
-    accumulated++;
-    unsentSeconds.value++;
-    if (accumulated % 10 === 0) saveBuffer(accumulated);
-    if (accumulated >= 60) flushStudy();
-  }, 1000);
   document.addEventListener('visibilitychange', onVisibility);
-  window.addEventListener('pagehide', flushStudy);
+  window.addEventListener('pagehide', commitStudy);
 });
 
 onBeforeUnmount(() => {
   if (timer) clearInterval(timer);
   for (const ev of INTERACTION_EVENTS) window.removeEventListener(ev, noteInteraction);
   document.removeEventListener('visibilitychange', onVisibility);
-  window.removeEventListener('pagehide', flushStudy);
+  window.removeEventListener('pagehide', commitStudy);
 });
 </script>
 
@@ -193,9 +136,10 @@ onBeforeUnmount(() => {
         <Vocab v-else-if="tab === 'vocab'" :words="data.words || []" />
         <StudyRecord
           v-else
-          :study-log="data.studyLog || []"
+          :study-log="studyEntries"
           :today-seconds="todaySeconds"
           :streak-days="studyStreakDays"
+          @clear-records="onClearRecords"
         />
       </template>
 

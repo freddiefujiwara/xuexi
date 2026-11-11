@@ -1,7 +1,7 @@
-// 勉強時間の記録（サーバー保存）。
-// GAS の study_log タブが正本で、doGet の studyLog で全日分を受け取り、
-// doPost の action:addStudy で加算する。送信に失敗した分は localStorage に
-// 退避しておき、次回まとめて送る。
+// 勉強時間の記録（端末ローカル保存）。
+// 学習記録は localStorage の xuexi:study-log に日次合計で持ち、サーバーには
+// 送らない（複数ユーザーが使っても個人の記録が混ざらないようにするため）。
+// サーバー保存だった頃の履歴は importServerStudyLog で一度だけ取り込む。
 import { isStagingBuild } from '../staging-banner.js';
 import { todayStr } from './progress.js';
 
@@ -70,44 +70,19 @@ export function buildShareText({ seconds, streakDays }) {
   return lines.join('\n');
 }
 
-export async function postStudy(apiUrl, { date, seconds, source, batchId }) {
-  const res = await fetch(apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'addStudy', date, seconds, source, batchId: batchId || undefined }),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.reason || 'addStudy failed');
-  return json;
-}
+// ---- 端末ローカルの学習記録 ----
+const LOG_KEY = `xuexi:study-log${suffix}`;
+const MIGRATED_KEY = `xuexi:study-migrated${suffix}`;
+const BUFFER_KEY = `xuexi:session-buffer${suffix}`;
 
-// 送信できなかった秒数を端末に退避する（次回に再送）。
-// 再送の二重加算を防ぐため、チャンクごとにバッチIDを持たせる。
-// 形式: { 'YYYY-MM-DD': [{ seconds, batchId }] }（旧形式の数値・単体オブジェクトも読める）
-export function newBatchId() {
-  return `b${Date.now().toString(36)}${Math.floor(Math.random() * 1e9).toString(36)}`;
-}
-
-function normalizeChunks(v) {
-  if (Array.isArray(v)) {
-    return v
-      .map((c) => (typeof c === 'number' ? { seconds: c, batchId: null } : { seconds: Number(c && c.seconds) || 0, batchId: (c && c.batchId) || null }))
-      .filter((c) => c.seconds > 0);
-  }
-  if (typeof v === 'number') return v > 0 ? [{ seconds: v, batchId: null }] : [];
-  if (v && typeof v === 'object' && Number(v.seconds) > 0) return [{ seconds: Number(v.seconds), batchId: v.batchId || null }];
-  return [];
-}
-
-export function loadPending(storage = localStorage) {
+export function loadStudyLog(storage = localStorage) {
   try {
-    const v = JSON.parse(storage.getItem(PENDING_KEY) || '{}');
+    const v = JSON.parse(storage.getItem(LOG_KEY) || '{}');
     if (!v || typeof v !== 'object') return {};
     const out = {};
-    for (const [date, chunks] of Object.entries(v)) {
-      const list = normalizeChunks(chunks);
-      if (list.length) out[date] = list;
+    for (const [date, sec] of Object.entries(v)) {
+      const n = Number(sec) || 0;
+      if (n > 0) out[date] = n;
     }
     return out;
   } catch {
@@ -115,57 +90,62 @@ export function loadPending(storage = localStorage) {
   }
 }
 
-export function pendingSeconds(pending, date) {
-  return (pending[date] || []).reduce((sum, c) => sum + c.seconds, 0);
-}
-
-function savePending(pending, storage) {
-  const dates = Object.keys(pending).filter((d) => pending[d] && pending[d].length);
-  if (dates.length === 0) storage.removeItem(PENDING_KEY);
-  else storage.setItem(PENDING_KEY, JSON.stringify(pending));
-}
-
-export function addPending(seconds, storage = localStorage, date = todayStr(), batchId = null) {
-  if (!seconds || seconds <= 0) return;
-  const pending = loadPending(storage);
-  if (!pending[date]) pending[date] = [];
-  pending[date].push({ seconds, batchId });
-  savePending(pending, storage);
-}
-
-export function removePendingChunk(date, chunk, storage = localStorage) {
-  const pending = loadPending(storage);
-  const list = pending[date] || [];
-  const idx = list.findIndex((c) => c.seconds === chunk.seconds && c.batchId === chunk.batchId);
-  if (idx >= 0) list.splice(idx, 1);
-  pending[date] = list;
-  savePending(pending, storage);
-}
-
-export function clearPending(storage = localStorage) {
-  storage.removeItem(PENDING_KEY);
-}
-
-// 計測中の秒数は、画面を閉じても失わないよう定期的に端末へ退避する。
-const BUFFER_KEY = `xuexi:session-buffer${suffix}`;
-
-export function saveBuffer(seconds, storage = localStorage, date = todayStr()) {
-  if (seconds > 0) storage.setItem(BUFFER_KEY, JSON.stringify({ date, seconds }));
-  else storage.removeItem(BUFFER_KEY);
-}
-
-export function loadBuffer(storage = localStorage) {
-  try {
-    const v = JSON.parse(storage.getItem(BUFFER_KEY) || 'null');
-    if (v && v.date && Number(v.seconds) > 0) return { date: v.date, seconds: Number(v.seconds) };
-  } catch {
-    // ignore broken buffer
+export function addStudySeconds(seconds, storage = localStorage, date = todayStr()) {
+  const log = loadStudyLog(storage);
+  if (seconds > 0) {
+    log[date] = (log[date] || 0) + seconds;
+    storage.setItem(LOG_KEY, JSON.stringify(log));
   }
-  return null;
+  return log;
 }
 
-export function clearBuffer(storage = localStorage) {
+export function clearStudyLog(storage = localStorage) {
+  storage.removeItem(LOG_KEY);
+}
+
+export function studyLogEntries(log) {
+  return Object.entries(log || {})
+    .map(([date, seconds]) => ({ date, seconds }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+function pendingSecondsOf(chunks) {
+  if (Array.isArray(chunks)) {
+    return chunks.reduce((sum, c) => sum + (typeof c === 'number' ? c : Number(c && c.seconds) || 0), 0);
+  }
+  if (typeof chunks === 'number') return chunks;
+  if (chunks && typeof chunks === 'object') return Number(chunks.seconds) || 0;
+  return 0;
+}
+
+// サーバー保存だった頃の履歴を一度だけ取り込む。サーバーの日次合計に、
+// 未送信分（pending）と退避分（buffer）を合算する。取り込み後は
+// pending / buffer を消し、以後は端末ローカルだけに記録する。
+export function importServerStudyLog(serverLog, storage = localStorage) {
+  if (storage.getItem(MIGRATED_KEY)) return loadStudyLog(storage);
+  const merged = logByDate(serverLog);
+  try {
+    const pending = JSON.parse(storage.getItem(PENDING_KEY) || '{}');
+    for (const [date, chunks] of Object.entries(pending || {})) {
+      const sec = pendingSecondsOf(chunks);
+      if (sec > 0) merged[date] = (merged[date] || 0) + sec;
+    }
+  } catch {
+    // 壊れた退避データは無視する
+  }
+  try {
+    const buffer = JSON.parse(storage.getItem(BUFFER_KEY) || 'null');
+    if (buffer && buffer.date && Number(buffer.seconds) > 0) {
+      merged[buffer.date] = (merged[buffer.date] || 0) + Number(buffer.seconds);
+    }
+  } catch {
+    // 壊れた退避データは無視する
+  }
+  storage.setItem(LOG_KEY, JSON.stringify(merged));
+  storage.setItem(MIGRATED_KEY, '1');
+  storage.removeItem(PENDING_KEY);
   storage.removeItem(BUFFER_KEY);
+  return merged;
 }
 
 // 操作が止まってから idleLimitMs を超えたら計測を止める（開きっぱなし対策）。

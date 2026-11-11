@@ -4,6 +4,8 @@ import { buildCalendar, buildShareText, formatMinutes, logByDate, monthSummary }
 import { buildShareCanvas, prefersShareSheet, shareCanvasImage } from '../lib/shareImage.js';
 import { todayStr } from '../lib/progress.js';
 
+const emit = defineEmits(['clear-records']);
+
 const props = defineProps({
   studyLog: { type: Array, default: () => [] },
   todaySeconds: { type: Number, default: 0 },
@@ -24,6 +26,14 @@ function moveMonth(delta) {
   const d = new Date(viewYear.value, viewMonth.value - 1 + delta, 1);
   viewYear.value = d.getFullYear();
   viewMonth.value = d.getMonth() + 1;
+}
+
+const clearedNote = ref('');
+
+function onClearRecords() {
+  if (!window.confirm('学習記録（勉強時間と実施日）をすべて削除します。元に戻せません。よろしいですか？')) return;
+  emit('clear-records');
+  clearedNote.value = '学習記録を削除しました。';
 }
 
 const imageNote = ref('');
@@ -175,10 +185,24 @@ async function shareAll() {
         </div>
       </div>
     </div>
+
+    <div class="danger-zone">
+      <button class="ghost danger" @click="onClearRecords">学習記録を削除する</button>
+      <p v-if="clearedNote" class="hint">{{ clearedNote }}</p>
+    </div>
   </section>
 </template>
 
 <style scoped>
+.danger-zone {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+button.danger {
+  color: var(--link);
+  border-color: var(--link);
+}
 .share-row {
   display: flex;
   flex-wrap: wrap;
