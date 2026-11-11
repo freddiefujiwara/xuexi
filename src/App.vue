@@ -22,9 +22,11 @@ import {
   pendingSeconds,
   removePendingChunk,
 } from './lib/study.js';
+import { tabFromPath, tabHrefs } from './lib/nav.js';
 
 const year = new Date().getFullYear();
-const tab = ref('cards');
+const tab = ref(tabFromPath(location.pathname));
+const hrefs = tabHrefs(location.pathname);
 const loading = ref(true);
 const error = ref('');
 const data = ref({ cards: [], drills: [], mistakes: [], words: [], studyLog: [] });
@@ -165,10 +167,10 @@ onBeforeUnmount(() => {
   <div>
     <nav class="site-nav">
       <ul>
-        <li><button type="button" :class="{ active: tab === 'cards' }" @click="tab = 'cards'">レッスンの復習</button></li>
-        <li><button type="button" :class="{ active: tab === 'drill' }" @click="tab = 'drill'">疑問詞ドリル</button></li>
-        <li><button type="button" :class="{ active: tab === 'vocab' }" @click="tab = 'vocab'">単語練習</button></li>
-        <li><button type="button" :class="{ active: tab === 'record' }" @click="tab = 'record'">記録</button></li>
+        <li><a :href="hrefs.cards" :class="{ active: tab === 'cards' }">レッスンの復習</a></li>
+        <li><a :href="hrefs.drill" :class="{ active: tab === 'drill' }">疑問詞ドリル</a></li>
+        <li><a :href="hrefs.vocab" :class="{ active: tab === 'vocab' }">単語練習</a></li>
+        <li><a :href="hrefs.record" :class="{ active: tab === 'record' }">記録</a></li>
       </ul>
     </nav>
     <div class="layout">
