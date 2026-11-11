@@ -88,6 +88,15 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.site-nav ul {
+  justify-self: center;
+  display: flex;
+  gap: clamp(14px, 3vw, 30px);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 @media (max-width: 560px) {
   .site-nav {
     grid-template-columns: 1fr;
