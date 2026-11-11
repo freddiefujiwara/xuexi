@@ -10,9 +10,9 @@ const props = defineProps({
 const emit = defineEmits(['finished']);
 
 const VERDICTS = {
-  correct: { label: '正解！', cls: 'right' },
-  close: { label: 'ほぼ正解（惜しい）', cls: 'right' },
-  wrong: { label: '不正解', cls: 'wrong' },
+  correct: { label: '✓ 正解！', cls: 'ok' },
+  close: { label: 'ほぼ正解（惜しい）', cls: 'ok' },
+  wrong: { label: '✗ 不正解', cls: 'ng' },
 };
 
 const queue = ref(shuffle(props.drills).slice(0, 5));
@@ -108,7 +108,7 @@ function done(ok) {
 
       <template v-else-if="phase === 'result'">
         <div class="answer">
-          <p :class="VERDICTS[result.verdict].cls">{{ VERDICTS[result.verdict].label }}</p>
+          <p class="verdict" :class="VERDICTS[result.verdict].cls">{{ VERDICTS[result.verdict].label }}</p>
           <p v-if="result.comment" class="point">{{ result.comment }}</p>
           <p class="meta">模範解答</p>
           <p class="zh small">{{ current.answer }}</p>
@@ -139,7 +139,7 @@ function done(ok) {
 
 <style scoped>
 .drill-input {
-  flex: 2; padding: 12px; border-radius: 12px; font-size: 16px;
+  flex: 2; padding: 12px; border-radius: 14px; font-size: 16px;
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
 }
 .linklike {
