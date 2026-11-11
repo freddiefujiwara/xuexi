@@ -203,7 +203,7 @@ onBeforeUnmount(() => {
         <div class="foot-links">
           <a href="https://freddiefujiwara.com/" target="_blank" rel="noopener">トップ <span class="arr">↗</span></a>
         </div>
-        <p class="copy">© {{ year }} 藤原史和（Fumikazu Fujiwara）— freddiefujiwara.com</p>
+        <p class="copy">© {{ year }} freddiefujiwara.com</p>
       </footer>
     </div>
   </div>
