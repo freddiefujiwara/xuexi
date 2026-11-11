@@ -10,6 +10,9 @@ import {
   logByDate,
   monthSummary,
   studyLevel,
+  decodeTransfer,
+  encodeTransfer,
+  mergeTransferLog,
   studyLogEntries,
 } from '../src/lib/study.js';
 
@@ -126,5 +129,26 @@ describe('isCountingActive', () => {
     const { isCountingActive } = await import('../src/lib/study.js');
     expect(isCountingActive(1000, 1000 + 179000)).toBe(true);
     expect(isCountingActive(1000, 1000 + 181000)).toBe(false);
+  });
+});
+
+describe('transfer link', () => {
+  it('エンコード→デコードで往復する', () => {
+    const enc = encodeTransfer({ '2026-11-10': 600, '2026-11-11': 420 }, ['2026-11-10', '2026-11-11']);
+    expect(enc).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(decodeTransfer(enc)).toEqual({
+      log: { '2026-11-10': 600, '2026-11-11': 420 },
+      done: ['2026-11-10', '2026-11-11'],
+    });
+  });
+  it('壊れたリンクは null', () => {
+    expect(decodeTransfer('zzzz')).toBeNull();
+    expect(decodeTransfer('')).toBeNull();
+  });
+  it('合体は同じ日に大きい方を残す', () => {
+    expect(mergeTransferLog({ '2026-11-11': 100 }, { '2026-11-11': 420, '2026-11-10': 60 })).toEqual({
+      '2026-11-11': 420,
+      '2026-11-10': 60,
+    });
   });
 });

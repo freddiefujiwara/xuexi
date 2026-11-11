@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { buildCalendar, buildShareText, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
+import { buildCalendar, buildShareText, encodeTransfer, formatMinutes, logByDate, monthSummary } from '../lib/study.js';
 import { buildShareCanvas, prefersShareSheet, shareCanvasImage } from '../lib/shareImage.js';
 import { todayStr } from '../lib/progress.js';
 
@@ -10,6 +10,7 @@ const props = defineProps({
   studyLog: { type: Array, default: () => [] },
   todaySeconds: { type: Number, default: 0 },
   streakDays: { type: Number, default: 0 },
+  doneDates: { type: Array, default: () => [] },
 });
 
 const now = new Date();
@@ -34,6 +35,27 @@ function onClearRecords() {
   if (!window.confirm('学習記録（勉強時間と実施日）をすべて削除します。元に戻せません。よろしいですか？')) return;
   emit('clear-records');
   clearedNote.value = '学習記録を削除しました。';
+}
+
+const transferUrl = ref('');
+const transferCopied = ref(false);
+
+function makeTransferLink() {
+  const entries = props.studyLog || [];
+  const log = {};
+  for (const row of entries) if (row && row.date) log[row.date] = Number(row.seconds) || 0;
+  const encoded = encodeTransfer(log, props.doneDates);
+  transferUrl.value = `https://freddiefujiwara.com/xuexi/record/#import=${encoded}`;
+}
+
+async function copyTransferLink() {
+  try {
+    await navigator.clipboard.writeText(transferUrl.value);
+    transferCopied.value = true;
+    setTimeout(() => (transferCopied.value = false), 2000);
+  } catch {
+    shareNote.value = 'コピーできませんでした。リンクを長押しでコピーしてください。';
+  }
 }
 
 const imageNote = ref('');
@@ -182,6 +204,20 @@ async function shareAll() {
           <a class="share-pill" :href="lineIntent" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.5 3 2 6.6 2 11.1c0 4 3.97 7.36 9.33 7.83.36.08.85.24.97.56.11.28.07.72.03.99l-.15.9c-.05.28-.22 1.1.97.6 1.19-.5 6.42-3.78 8.76-6.46C22.36 12.9 22 12.03 22 11.1 22 6.6 17.5 3 12 3zM8.34 13.42H6.06c-.3 0-.55-.25-.55-.55V8.98c0-.3.25-.55.55-.55.3 0 .55.25.55.55v3.34h1.73c.3 0 .55.25.55.55 0 .3-.25.55-.55.55zm1.7-.55c0 .3-.25.55-.55.55-.3 0-.55-.25-.55-.55V8.98c0-.3.25-.55.55-.55.3 0 .55.25.55.55v3.89zm4.9 0c0 .3-.19.47-.4.47-.14 0-.27-.06-.41-.2l-2.28-2.77v2.5c0 .3-.25.55-.55.55-.3 0-.55-.25-.55-.55V8.98c0-.3.25-.55.55-.55.16 0 .31.07.42.2l2.28 2.77V8.98c0-.3.25-.55.55-.55.3 0 .55.25.55.55v3.89zm3.05-2.22c.3 0 .55.25.55.55 0 .3-.25.55-.55.55h-1.73v.57h1.73c.3 0 .55.25.55.55 0 .3-.25.55-.55.55h-2.28c-.3 0-.55-.25-.55-.55V8.98c0-.3.25-.55.55-.55h2.28c.3 0 .55.25.55.55 0 .3-.25.55-.55.55h-1.73v.57h1.73z"/></svg>LINE</a>
           <a class="share-pill" :href="threadsIntent" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.6 8.2c-.2-1-.6-1.84-1.3-2.5C15.22 4.66 13.9 4.2 12.36 4.2c-.05 0-.1 0-.15.01-1.6.03-3.02.55-4.1 1.5a5.35 5.35 0 0 0-1.63 3.04c-.11.7-.12 1.44-.03 2.2.2 1.66.96 3.1 2.15 4.07.93.76 2.06 1.16 3.24 1.16.08 0 .15 0 .23-.01 1.18-.05 2.27-.45 3.12-1.14.12-.1.24-.2.35-.31.03.24.04.48.03.71-.04 1.03-.4 1.84-1.06 2.42-.6.53-1.44.82-2.42.82-1.1.02-2.02-.3-2.67-.93-.5-.48-.83-1.16-.95-1.97H6.4c.14 1.24.66 2.32 1.47 3.1.95.9 2.25 1.36 3.77 1.34 1.4-.02 2.64-.45 3.58-1.24 1.05-.88 1.64-2.15 1.7-3.67.03-.7-.04-1.44-.2-2.2l-.55-2.62-.02-.09c-.17-.75-.47-1.4-.9-1.94-.66-.83-1.6-1.32-2.72-1.4-1.02-.08-1.98.16-2.7.68-.63.45-1.05 1.1-1.18 1.83-.11.62.03 1.22.4 1.7.4.53 1.02.85 1.74.9.6.05 1.2-.1 1.75-.42l.42-.25-.78-.62-.3.18c-.34.2-.7.3-1.03.27-.4-.03-.73-.2-.94-.48-.2-.26-.27-.58-.21-.93.08-.45.35-.86.76-1.15.5-.36 1.17-.52 1.88-.46.8.06 1.46.4 1.92.97.3.38.52.86.64 1.4l.52 2.47c-.17.2-.36.4-.57.58-.66.57-1.48.89-2.37.93-1.9.08-3.6-.67-4.77-2.1-.78-.96-1.3-2.2-1.45-3.52-.08-.64-.07-1.26.02-1.84.14-.9.6-1.75 1.3-2.4.86-.8 2.02-1.26 3.27-1.28 1.27-.02 2.36.4 3.16 1.22.48.5.8 1.13.96 1.87l.04.2h1.72l-.07-.35z"/></svg>Threads</a>
           <button type="button" class="share-pill" @click="copyShareText"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.6 13.4a4 4 0 0 0 5.66 0l3.54-3.54a4 4 0 1 0-5.66-5.65l-1.77 1.76 1.42 1.42 1.77-1.77a2 2 0 1 1 2.82 2.83l-3.53 3.54a2 2 0 0 1-2.83 0l-1.42 1.41zm2.83-2.83a4 4 0 0 0-5.66 0L4.23 14.1a4 4 0 1 0 5.66 5.66l1.77-1.77-1.42-1.41-1.77 1.76a2 2 0 1 1-2.82-2.82l3.53-3.54a2 2 0 0 1 2.83 0l1.42-1.42z"/></svg>{{ copied ? 'コピーしました' : '文をコピー' }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="answer">
+      <p class="meta">別の端末への引き継ぎ</p>
+      <div class="row">
+        <button class="ghost" @click="makeTransferLink">引き継ぎリンクを作る</button>
+      </div>
+      <p class="hint">リンクを開いた端末に、今の学習記録を取り込みます。記録そのものがリンクに入っているので、扱いはパスワードと同じにお願いします。</p>
+      <div v-if="transferUrl">
+        <textarea class="share-text" readonly rows="3" :value="transferUrl"></textarea>
+        <div class="row">
+          <button class="ghost" @click="copyTransferLink">{{ transferCopied ? 'コピーしました' : 'リンクをコピー' }}</button>
         </div>
       </div>
     </div>

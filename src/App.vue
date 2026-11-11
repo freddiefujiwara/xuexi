@@ -6,14 +6,17 @@ import Vocab from './components/Vocab.vue';
 import StudyRecord from './components/StudyRecord.vue';
 import { API_URL } from './config.js';
 import { selectDailyCards } from './lib/select.js';
-import { clearDone, isDoneToday, loadDone, markDone, streak, todayStr } from './lib/progress.js';
+import { clearDone, isDoneToday, loadDone, markDone, mergeDone, streak, todayStr } from './lib/progress.js';
 import {
   addStudySeconds,
   clearStudyLog,
   formatMinutes,
   importServerStudyLog,
   isCountingActive,
+  decodeTransfer,
   loadStudyLog,
+  mergeTransferLog,
+  saveStudyLog,
   studyLogEntries,
 } from './lib/study.js';
 import { tabFromPath, tabHrefs } from './lib/nav.js';
@@ -24,6 +27,8 @@ const hrefs = tabHrefs(location.pathname);
 const loading = ref(true);
 const error = ref('');
 const data = ref({ cards: [], drills: [], mistakes: [], words: [], studyLog: [] });
+const doneDates = ref(loadDone());
+const transferNote = ref('');
 const doneToday = ref(false);
 const streakDays = ref(0);
 // 学習記録は端末ローカル（localStorage）に日次合計で持つ。
@@ -47,8 +52,27 @@ const studyStreakDays = computed(() =>
 );
 
 function refreshProgress() {
+  doneDates.value = loadDone();
   doneToday.value = isDoneToday();
   streakDays.value = streak(loadDone());
+}
+
+// 引き継ぎリンク（#import=...）を開いたら、確認のうえ記録を取り込む。
+function applyTransferFromHash() {
+  const m = location.hash.match(/#import=([A-Za-z0-9_-]+)/);
+  // リンクは一度使ったらURLから消す（再取り込みと漏えい防止）。
+  if (m) history.replaceState(null, '', location.pathname + location.search);
+  if (!m) return;
+  const data = decodeTransfer(m[1]);
+  if (!data || (Object.keys(data.log).length === 0 && data.done.length === 0)) {
+    transferNote.value = '引き継ぎリンクを読み取れませんでした。';
+    return;
+  }
+  if (!window.confirm('引き継ぎデータの学習記録を取り込みますか？（同じ日は大きい方の記録を残します）')) return;
+  localLog.value = saveStudyLog(mergeTransferLog(localLog.value, data.log));
+  mergeDone(data.done);
+  refreshProgress();
+  transferNote.value = '引き継ぎデータを取り込みました。';
 }
 
 function onFinished() {
@@ -94,6 +118,7 @@ onMounted(async () => {
   if (!error.value) {
     localLog.value = importServerStudyLog(data.value.studyLog);
   }
+  applyTransferFromHash();
   document.addEventListener('visibilitychange', onVisibility);
   window.addEventListener('pagehide', commitStudy);
 });
@@ -120,6 +145,7 @@ onBeforeUnmount(() => {
       <header class="page-head">
         <h1>学习</h1>
         <p class="lead">レッスンで学んだことの復習</p>
+        <p v-if="transferNote" class="status">{{ transferNote }}</p>
         <p class="status">
           <span v-if="doneToday">今日の分は実施済みです。</span>
           <span v-else>今日の分はこれからです。</span>
@@ -139,6 +165,7 @@ onBeforeUnmount(() => {
           :study-log="studyEntries"
           :today-seconds="todaySeconds"
           :streak-days="studyStreakDays"
+          :done-dates="doneDates"
           @clear-records="onClearRecords"
         />
       </template>
