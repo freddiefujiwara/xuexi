@@ -134,6 +134,21 @@ onMounted(async () => {
     localLog.value = importServerStudyLog(data.value.studyLog);
   }
   applyTransferFromHash();
+  // 学習タブを開いている間だけ、画面が見えている時間を計測する。
+  for (const ev of INTERACTION_EVENTS) window.addEventListener(ev, noteInteraction, { passive: true });
+  timer = setInterval(() => {
+    if (document.visibilityState !== 'visible') return;
+    if (!['cards', 'drill', 'vocab'].includes(tab.value)) return;
+    // 開きっぱなしの画面（操作なし3分超・非フォーカス）は数えない。
+    if (typeof document.hasFocus === 'function' && !document.hasFocus()) return;
+    if (!isCountingActive(lastInteractionAt, Date.now())) {
+      commitStudy();
+      return;
+    }
+    accumulated++;
+    // 10秒ごとに端末ローカルの記録へ確定する（落ちても失わない）。
+    if (accumulated >= 10) commitStudy();
+  }, 1000);
   document.addEventListener('visibilitychange', onVisibility);
   window.addEventListener('pagehide', commitStudy);
 });
