@@ -4,6 +4,7 @@
 // ブラウザから TTS を直接叩くことはしない。取得に失敗した場合は
 // 端末の音声合成（speechSynthesis）にフォールバックする。
 import { API_URL } from '../config.js';
+import { trackTtsLoad } from './analytics.js';
 
 export function ttsApiUrl(text) {
   return `${API_URL}?text=${encodeURIComponent(text)}`;
@@ -107,6 +108,8 @@ export async function speakChinese(text) {
   activeText = text;
   activeState = 'loading';
   notify();
+  const loadStartedAt = performance.now();
+  const fromUrlCache = urlCache.has(text);
   try {
     let url = urlCache.get(text);
     if (!url) {
@@ -121,6 +124,7 @@ export async function speakChinese(text) {
     el.src = url;
     activeState = 'playing';
     notify();
+    trackTtsLoad(performance.now() - loadStartedAt, fromUrlCache ? 'hit' : 'miss');
     await el.play();
   } catch (err) {
     if (seq !== requestSeq) return;
