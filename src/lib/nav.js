@@ -1,6 +1,4 @@
 // タブごとのURL（マルチページ構成）。パスから初期タブとリンク先を決める。
-export const TAB_PATHS = { cards: '', drill: 'drill/', vocab: 'vocabulary/', record: 'record/' };
-
 export function tabFromPath(pathname) {
   if (/\/(drill)\/?$/.test(pathname)) return 'drill';
   if (/\/(vocabulary)\/?$/.test(pathname)) return 'vocab';
