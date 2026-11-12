@@ -22,3 +22,13 @@ describe('audio helpers', () => {
     expect(playingText()).toBeNull();
   });
 });
+
+describe('buttonFace', () => {
+  it('読み込み中は「…」用の dots、再生中は pause、それ以外は play', async () => {
+    const { buttonFace } = await import('../src/lib/audio.js');
+    expect(buttonFace('loading')).toBe('dots');
+    expect(buttonFace('playing')).toBe('pause');
+    expect(buttonFace(null)).toBe('play');
+    expect(buttonFace(undefined)).toBe('play');
+  });
+});

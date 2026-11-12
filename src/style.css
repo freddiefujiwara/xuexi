@@ -731,6 +731,13 @@ input.answer-input:focus {
 .audio-btn.loading {
   opacity: 0.6;
 }
+.audio-btn .audio-dots {
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 1px;
+  transform: translateY(-3px);
+}
 
 /* ---- 商用アプリ風の共通パーツ ---- */
 .tag {

@@ -14,6 +14,6 @@ test("xuexi staging page loads with banner and exercises", async ({ page }) => {
   expect(resp.status()).toBe(200);
   await expect(page.getByText("STAGING")).toBeVisible();
   await expect(page.getByRole("link", { name: "レッスンの復習" })).toBeVisible();
-  await expect(page.getByText(/問目/).first()).toBeVisible();
+  await expect(page.getByText(/進み具合/).first()).toBeVisible();
   await expect(page.getByText(/レッスン議事録から作ったカード/)).toBeVisible();
 });
