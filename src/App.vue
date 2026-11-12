@@ -21,6 +21,7 @@ import {
 } from './lib/study.js';
 import { tabFromPath, tabHrefs } from './lib/nav.js';
 import { fetchSection, sectionForTab } from './lib/data.js';
+import { trackAppReady, trackDataFetch, trackPageView } from './lib/analytics.js';
 
 const year = new Date().getFullYear();
 const PAGE_HEADS = {
@@ -107,6 +108,7 @@ function onVisibility() {
 
 onMounted(async () => {
   refreshProgress();
+  trackPageView(tab.value);
   if (!API_URL) {
     error.value = 'データAPIのURLが未設定です（ビルド時の設定待ち）。';
     loading.value = false;
@@ -115,14 +117,18 @@ onMounted(async () => {
   // タブごとに必要なセクションだけ取る（記録タブは取得自体をしない）。
   const section = sectionForTab(tab.value);
   if (section) {
+    const fetchStartedAt = performance.now();
     try {
       const result = await fetchSection(section);
       data.value = { ...data.value, [section]: result.rows };
+      trackDataFetch(section, performance.now() - fetchStartedAt, result.fromCache ? 'hit' : 'miss');
     } catch (e) {
+      trackDataFetch(section, performance.now() - fetchStartedAt, 'error');
       error.value = `データを読み込めませんでした（${e.message}）。時間をおいて開き直してください。`;
     }
   }
   loading.value = false;
+  trackAppReady(tab.value, performance.now());
   // サーバー保存だった頃の履歴を一度だけ端末へ取り込む（取得できた時だけ）。
   if (!error.value) {
     localLog.value = importServerStudyLog(data.value.studyLog);

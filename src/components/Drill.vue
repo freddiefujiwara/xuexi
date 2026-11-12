@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { shuffle } from '../lib/select.js';
 import { API_URL } from '../config.js';
 import AudioButton from './AudioButton.vue';
+import { trackJudge } from '../lib/analytics.js';
 
 const props = defineProps({
   drills: { type: Array, default: () => [] },
@@ -30,6 +31,7 @@ const finished = computed(() => !current.value);
 async function judge() {
   if (!current.value || !input.value.trim() || phase.value === 'judging') return;
   phase.value = 'judging';
+  const judgeStartedAt = performance.now();
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -43,6 +45,7 @@ async function judge() {
     });
     const data = await res.json();
     if (data && data.ok && VERDICTS[data.verdict]) {
+      trackJudge(performance.now() - judgeStartedAt, 'ok');
       result.value = data;
       phase.value = 'result';
       return;
@@ -50,6 +53,7 @@ async function judge() {
   } catch (e) {
     // 通信失敗時は自己判定に落とす
   }
+  trackJudge(performance.now() - judgeStartedAt, 'fallback');
   phase.value = 'fallback';
 }
 
