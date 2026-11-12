@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { selectDailyCards, shuffle } from '../src/lib/select.js';
 import { isStagingBuild } from '../src/staging-banner.js';
@@ -95,5 +96,17 @@ describe('progress', () => {
   test('streak は今日だけ実施なら1', () => {
     expect(streak(['2026-11-10'], '2026-11-10')).toBe(1);
     expect(streak(['2026-11-09'], '2026-11-10')).toBe(1);
+  });
+});
+
+// 回帰防止: PR #30（localStorage移行）の書き換えで onMounted のタイマー開始が
+// 落ち、勉強時間が記録されなくなった事故が再発しないよう、配線をソースで担保する。
+describe('学習タイマーの配線（App.vue）', () => {
+  const src = readFileSync('src/App.vue', 'utf-8');
+  test('タイマーを開始し、操作リスナーと isCountingActive のゲートがある', () => {
+    expect(src).toContain('timer = setInterval(');
+    expect(src).toContain('window.addEventListener(ev, noteInteraction');
+    expect(src).toContain('isCountingActive(lastInteractionAt, Date.now())');
+    expect(src).toContain("['cards', 'drill', 'vocab']");
   });
 });
