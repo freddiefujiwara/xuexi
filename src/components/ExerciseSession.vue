@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { buildSession } from '../lib/exercises.js';
-import { blogArticleForCard } from '../lib/blogLinks.js';
+import { blogUrlForCard } from '../lib/blogLinks.js';
 import ChoiceQ from './questions/ChoiceQ.vue';
 import ClozeChoiceQ from './questions/ClozeChoiceQ.vue';
 import ClozeInputQ from './questions/ClozeInputQ.vue';
@@ -38,7 +38,7 @@ const firstTryTotal = ref(queue.value.length);
 const firstTryCorrect = ref(0);
 
 const current = computed(() => queue.value[index.value] || null);
-const blogArticle = computed(() => blogArticleForCard(current.value?.card));
+const blogUrl = computed(() => blogUrlForCard(current.value?.card));
 const progressPct = computed(() =>
   firstTryTotal.value > 0 ? Math.min(100, Math.round((seenCount.value / firstTryTotal.value) * 100)) : 0
 );
@@ -75,7 +75,15 @@ function onDone(ok) {
     <div v-else class="panel">
       <div class="sess-head">
         <span class="tag">{{ LABELS[current.type] }}</span>
-        <span class="tag gray">{{ lessonLabel(current.card.lesson) }} のレッスン ・ {{ current.card.pillar }}</span>
+        <a
+          v-if="blogUrl"
+          class="tag gray lesson-link"
+          :href="blogUrl"
+          target="_blank"
+          rel="noopener"
+          title="このレッスンのブログ記事"
+        >{{ lessonLabel(current.card.lesson) }} のレッスン ・ {{ current.card.pillar }}↗</a>
+        <span v-else class="tag gray">{{ lessonLabel(current.card.lesson) }} のレッスン ・ {{ current.card.pillar }}</span>
         <span v-if="round > 0" class="tag">再挑戦</span>
       </div>
       <div v-if="round === 0" class="prog">
@@ -88,23 +96,16 @@ function onDone(ok) {
         :q="current"
         @done="onDone"
       />
-      <p v-if="blogArticle" class="related">
-        この問題の関連記事：<a :href="blogArticle.url" target="_blank" rel="noopener">{{ blogArticle.title }} ↗</a>
-      </p>
     </div>
   </section>
 </template>
 
 <style scoped>
-.related {
-  margin: 18px 0 0;
-  font-size: 0.82rem;
-  color: var(--muted-2);
+.lesson-link {
+  text-decoration: none;
 }
-.related a {
-  color: var(--muted);
-}
-.related a:hover {
+.lesson-link:hover {
   color: var(--link);
+  text-decoration: underline;
 }
 </style>
