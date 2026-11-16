@@ -11,11 +11,27 @@ const cards = [
 ];
 
 describe('selectDailyCards', () => {
-  test('直近2回のレッスンを中心に10枚選ぶ', () => {
+  test('直近2回から4枚、残りは古い回から選ぶ', () => {
     const picked = selectDailyCards(cards, { random: () => 0 });
     expect(picked).toHaveLength(10);
     const recent = picked.filter((c) => c.lesson !== '2026-10-24');
-    expect(recent.length).toBeGreaterThanOrEqual(7);
+    expect(recent).toHaveLength(4);
+    expect(picked.filter((c) => c.lesson === '2026-10-24')).toHaveLength(6);
+    expect(new Set(picked.map((c) => c.id)).size).toBe(10);
+  });
+  test('古い回はレッスンごとに均等に混ざる', () => {
+    const all = [
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `r1-${i}`, lesson: '2026-11-14' })),
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `r2-${i}`, lesson: '2026-11-07' })),
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `o1-${i}`, lesson: '2026-10-31' })),
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `o2-${i}`, lesson: '2026-10-24' })),
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `o3-${i}`, lesson: '2026-10-17' })),
+    ];
+    const picked = selectDailyCards(all, { random: () => 0.5 });
+    expect(picked).toHaveLength(10);
+    for (const lesson of ['2026-10-31', '2026-10-24', '2026-10-17']) {
+      expect(picked.filter((c) => c.lesson === lesson)).toHaveLength(2);
+    }
   });
   test('空なら空配列', () => {
     expect(selectDailyCards([])).toEqual([]);
@@ -24,19 +40,12 @@ describe('selectDailyCards', () => {
     const few = Array.from({ length: 3 }, (_, i) => ({ id: `x${i}`, lesson: '2026-11-07' }));
     expect(selectDailyCards(few, { total: 10, random: () => 0.5 })).toHaveLength(3);
   });
-  test('直近が recentCount 未満なら古い分で補充する', () => {
-    const all = [
-      ...Array.from({ length: 3 }, (_, i) => ({ id: `n${i}`, lesson: '2026-11-07' })),
-      ...Array.from({ length: 10 }, (_, i) => ({ id: `o${i}`, lesson: '2026-10-17' })),
-    ];
-    const picked = selectDailyCards(all, { total: 10, recentCount: 7, random: () => 0.5 });
-    expect(picked).toHaveLength(10);
-    expect(picked.filter((c) => c.lesson === '2026-11-07')).toHaveLength(3);
-    expect(picked.filter((c) => c.lesson === '2026-10-17')).toHaveLength(7);
-  });
   test('古いカードが無ければ直近の残りで補充し重複しない', () => {
-    const all = Array.from({ length: 12 }, (_, i) => ({ id: `n${i}`, lesson: '2026-11-07' }));
-    const picked = selectDailyCards(all, { total: 10, recentCount: 7, random: () => 0.5 });
+    const all = [
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `n${i}`, lesson: '2026-11-07' })),
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `m${i}`, lesson: '2026-10-31' })),
+    ];
+    const picked = selectDailyCards(all, { total: 10, random: () => 0.5 });
     expect(picked).toHaveLength(10);
     expect(new Set(picked.map((c) => c.id)).size).toBe(10);
   });
