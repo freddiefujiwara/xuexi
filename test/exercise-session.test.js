@@ -30,15 +30,16 @@ describe('ExerciseSession: 選択問題', () => {
     expect(w.emitted('finished')).toBeTruthy();
   });
 
-  test('レッスンに対応するブログ記事への控えめなリンクが出る', () => {
+  test('レッスンタグ自体がブログ記事へのリンクになる', () => {
     const w = mount(ExerciseSession, { props: { cards, pool: fullPool } });
-    const link = w.find('a.blog-link');
+    const link = w.find('a.lesson-link');
     expect(link.exists()).toBe(true);
-    expect(link.text()).toBe('記事 ↗');
+    expect(link.text()).toBe('2026-10-31 のレッスン ・ -');
     expect(link.attributes('href')).toBe(
       'https://freddiefujiwara.com/blog/1BfOXlaRhgN0Ksxxx0wT9Ku3KPYMbLrzgaZ9xQ7_MOMY'
     );
     expect(link.attributes('target')).toBe('_blank');
+    expect(w.find('a.blog-link').exists()).toBe(false);
   });
 
   test('間違えると最後にもう一度出て、正解するまで終わらない', async () => {

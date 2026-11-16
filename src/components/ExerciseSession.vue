@@ -75,15 +75,15 @@ function onDone(ok) {
     <div v-else class="panel">
       <div class="sess-head">
         <span class="tag">{{ LABELS[current.type] }}</span>
-        <span class="tag gray">{{ lessonLabel(current.card.lesson) }} のレッスン ・ {{ current.card.pillar }}</span>
         <a
           v-if="blogUrl"
-          class="tag gray blog-link"
+          class="tag gray lesson-link"
           :href="blogUrl"
           target="_blank"
           rel="noopener"
           title="このレッスンのブログ記事"
-        >記事 ↗</a>
+        >{{ lessonLabel(current.card.lesson) }} のレッスン ・ {{ current.card.pillar }}</a>
+        <span v-else class="tag gray">{{ lessonLabel(current.card.lesson) }} のレッスン ・ {{ current.card.pillar }}</span>
         <span v-if="round > 0" class="tag">再挑戦</span>
       </div>
       <div v-if="round === 0" class="prog">
@@ -101,10 +101,11 @@ function onDone(ok) {
 </template>
 
 <style scoped>
-.blog-link {
+.lesson-link {
   text-decoration: none;
 }
-.blog-link:hover {
+.lesson-link:hover {
   color: var(--link);
+  text-decoration: underline;
 }
 </style>
