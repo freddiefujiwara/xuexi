@@ -30,21 +30,17 @@ describe('ExerciseSession: 選択問題', () => {
     expect(w.emitted('finished')).toBeTruthy();
   });
 
-  test('問題の下部に「この問題の関連記事」リンクが出る', () => {
+  test('レッスンタグが↗付きでブログ記事へのリンクになる', () => {
     const w = mount(ExerciseSession, { props: { cards, pool: fullPool } });
-    const rel = w.find('.related');
-    expect(rel.exists()).toBe(true);
-    expect(rel.text()).toContain('この問題の関連記事：');
-    const link = rel.find('a');
-    expect(link.text()).toBe(
-      '「壁に貼ってある」「机に置いてある」。中国語で様子を描写する、学び直し4回目のレッスン ↗'
-    );
+    const link = w.find('a.lesson-link');
+    expect(link.exists()).toBe(true);
+    expect(link.text()).toBe('2026-10-31 のレッスン ・ -↗');
     expect(link.attributes('href')).toBe(
       'https://freddiefujiwara.com/blog/1BfOXlaRhgN0Ksxxx0wT9Ku3KPYMbLrzgaZ9xQ7_MOMY'
     );
     expect(link.attributes('target')).toBe('_blank');
-    // レッスンタグ自体はリンクにしない
-    expect(w.find('a.lesson-link').exists()).toBe(false);
+    // パネル下部の関連記事の行は出さない
+    expect(w.find('.related').exists()).toBe(false);
   });
 
   test('間違えると最後にもう一度出て、正解するまで終わらない', async () => {
