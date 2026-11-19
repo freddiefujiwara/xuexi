@@ -1,6 +1,7 @@
 // 単語練習（旧HSK1〜3）の出題と判定。
 // 問題は日本語訳を見て、中国語をフリーテキストで答える。
 // 判定は「中国語そのもの」か「ピンイン（声調記号なしでも可）」のどちらかで正解にする。
+import { shuffle } from './select.js';
 
 export function normalizeAnswer(s) {
   return (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
@@ -38,10 +39,5 @@ export function filterByLevel(words, level) {
 }
 
 export function pickWords(words, count = 10, random = Math.random) {
-  const pool = [...words];
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.slice(0, count);
+  return shuffle(words, random).slice(0, count);
 }

@@ -11,7 +11,6 @@ import {
   addStudySeconds,
   clearStudyLog,
   formatMinutes,
-  importServerStudyLog,
   isCountingActive,
   decodeTransfer,
   loadStudyLog,
@@ -52,11 +51,10 @@ function noteInteraction() {
 const INTERACTION_EVENTS = ['pointerdown', 'keydown', 'touchstart'];
 
 const dailyCards = computed(() => selectDailyCards(data.value.cards));
-const studyByDate = computed(() => localLog.value);
 const studyEntries = computed(() => studyLogEntries(localLog.value));
 const todaySeconds = computed(() => localLog.value[todayStr()] || 0);
 const studyStreakDays = computed(() =>
-  streak(Object.keys(studyByDate.value).filter((d) => studyByDate.value[d] > 0))
+  streak(Object.keys(localLog.value).filter((d) => localLog.value[d] > 0))
 );
 
 function refreshProgress() {
@@ -129,10 +127,6 @@ onMounted(async () => {
   }
   loading.value = false;
   trackAppReady(tab.value, performance.now());
-  // サーバー保存だった頃の履歴を一度だけ端末へ取り込む（取得できた時だけ）。
-  if (!error.value) {
-    localLog.value = importServerStudyLog(data.value.studyLog);
-  }
   applyTransferFromHash();
   // 学習タブを開いている間だけ、画面が見えている時間を計測する。
   for (const ev of INTERACTION_EVENTS) window.addEventListener(ev, noteInteraction, { passive: true });

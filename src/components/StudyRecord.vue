@@ -41,21 +41,23 @@ const transferUrl = ref('');
 const transferCopied = ref(false);
 
 function makeTransferLink() {
-  const entries = props.studyLog || [];
-  const log = {};
-  for (const row of entries) if (row && row.date) log[row.date] = Number(row.seconds) || 0;
-  const encoded = encodeTransfer(log, props.doneDates);
+  const encoded = encodeTransfer(byDate.value, props.doneDates);
   transferUrl.value = `https://freddiefujiwara.com/xuexi/record/#import=${encoded}`;
 }
 
-async function copyTransferLink() {
+// クリップボードへコピーし、成功したら2秒だけ「コピーしました」を出す共通処理。
+async function copyText(text, flag, failMessage) {
   try {
-    await navigator.clipboard.writeText(transferUrl.value);
-    transferCopied.value = true;
-    setTimeout(() => (transferCopied.value = false), 2000);
+    await navigator.clipboard.writeText(text);
+    flag.value = true;
+    setTimeout(() => (flag.value = false), 2000);
   } catch {
-    shareNote.value = 'コピーできませんでした。リンクを長押しでコピーしてください。';
+    shareNote.value = failMessage;
   }
+}
+
+function copyTransferLink() {
+  return copyText(transferUrl.value, transferCopied, 'コピーできませんでした。リンクを長押しでコピーしてください。');
 }
 
 const imageNote = ref('');
@@ -82,14 +84,8 @@ const threadsIntent = computed(
     `https://www.threads.net/intent/post?text=${encodeURIComponent(`${shareTextValue.value}\n${PAGE_URL}`)}`
 );
 
-async function copyShareText() {
-  try {
-    await navigator.clipboard.writeText(shareTextValue.value);
-    copied.value = true;
-    setTimeout(() => (copied.value = false), 2000);
-  } catch {
-    shareNote.value = 'コピーできませんでした。上の文を長押しでコピーしてください。';
-  }
+function copyShareText() {
+  return copyText(shareTextValue.value, copied, 'コピーできませんでした。上の文を長押しでコピーしてください。');
 }
 
 // 共有シートで出すのは「ファイル共有ができて、タッチ主体の端末」のときだけ。

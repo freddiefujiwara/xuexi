@@ -389,13 +389,6 @@ body {
   font-size: 0.92rem;
 }
 
-.actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
-
 button.primary {
   background: var(--primary);
   color: #fff;
@@ -448,23 +441,6 @@ button.ghost.active {
   flex: 1;
 }
 
-input.answer-input {
-  width: 100%;
-  font: inherit;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface);
-  color: var(--text);
-  margin-top: 10px;
-}
-
-input.answer-input:focus {
-  outline: 2px solid var(--link);
-  outline-offset: 0;
-  border-color: transparent;
-}
-
 .result {
   border-radius: 10px;
   padding: 10px 14px;
@@ -489,130 +465,14 @@ input.answer-input:focus {
   margin-top: 12px;
 }
 
-.q-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.q-option {
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 14px;
-  font: inherit;
-  cursor: pointer;
-  color: var(--text);
-}
-
-.q-option .zh {
-  font-size: 1.15rem;
-  margin: 0;
-}
-
-.q-option.picked-ok {
-  border-color: var(--ok);
-  background: var(--ok-bg);
-}
-
-.q-option.picked-ng {
-  border-color: var(--error);
-}
-
-.q-option:disabled {
-  cursor: default;
-}
-
-.cloze-blank {
-  display: inline-block;
-  min-width: 3.2em;
-  border-bottom: 2px solid var(--link);
-  color: var(--link);
-  text-align: center;
-  padding: 0 4px;
-}
-
-.tile-bank,
-.tile-answer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-  min-height: 48px;
-  align-items: flex-start;
-}
-
-.tile-answer {
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  padding: 8px;
-}
-
-.tile {
-  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Zen Kaku Gothic New", sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.tile.used {
-  opacity: 0.3;
-  cursor: default;
-}
-
-.tile-suffix {
-  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 1.2rem;
-  font-weight: 700;
-  align-self: center;
-  padding: 0 2px;
-}
-
 .wrong {
   color: var(--error);
   font-weight: 700;
 }
 
-.arrow {
-  color: var(--muted-2);
-  margin: 2px 0;
-}
-
 .point {
   font-weight: 700;
   margin: 6px 0 2px;
-}
-
-.progress-note {
-  color: var(--muted);
-  font-size: 0.92rem;
-  margin-top: 4px;
-}
-
-.today-minutes {
-  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
-  font-size: 1.6rem;
-  font-weight: 800;
-  margin: 4px 0;
-}
-
-.today-minutes .unit {
-  font-size: 1rem;
-  margin-left: 2px;
-}
-
-.manual-add {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-  flex-wrap: wrap;
 }
 
 .cal-head {
