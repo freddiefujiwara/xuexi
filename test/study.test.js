@@ -5,7 +5,6 @@ import {
   buildShareText,
   clearStudyLog,
   formatMinutes,
-  importServerStudyLog,
   loadStudyLog,
   logByDate,
   monthSummary,
@@ -100,27 +99,6 @@ describe('study log (localStorage)', () => {
       { date: '2026-11-01', seconds: 30 },
       { date: '2026-11-11', seconds: 60 },
     ]);
-  });
-});
-
-describe('importServerStudyLog', () => {
-  it('サーバー履歴＋未送信分＋退避分を合算して一度だけ取り込む', () => {
-    const storage = fakeStorage();
-    storage.setItem('xuexi:pending-study', JSON.stringify({ '2026-11-11': [{ seconds: 90, batchId: 'b1' }] }));
-    storage.setItem('xuexi:session-buffer', JSON.stringify({ date: '2026-11-11', seconds: 30 }));
-    const merged = importServerStudyLog(
-      [
-        { date: '2026-11-10', seconds: 600 },
-        { date: '2026-11-11', seconds: 300 },
-      ],
-      storage
-    );
-    expect(merged).toEqual({ '2026-11-10': 600, '2026-11-11': 420 });
-    expect(storage.getItem('xuexi:pending-study')).toBeNull();
-    expect(storage.getItem('xuexi:session-buffer')).toBeNull();
-    // 2回目は取り込まない
-    const again = importServerStudyLog([{ date: '2026-11-11', seconds: 9999 }], storage);
-    expect(again).toEqual({ '2026-11-10': 600, '2026-11-11': 420 });
   });
 });
 

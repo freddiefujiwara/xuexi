@@ -35,6 +35,12 @@ function notify() {
   for (const fn of listeners) fn({ text: activeText, state: activeState });
 }
 
+function clearActive() {
+  activeText = null;
+  activeState = null;
+  notify();
+}
+
 export function subscribeAudio(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
@@ -59,11 +65,7 @@ function getAudioEl() {
   if (!audioEl) {
     audioEl = new Audio();
     audioEl.addEventListener('ended', () => {
-      if (activeState === 'playing') {
-        activeText = null;
-        activeState = null;
-        notify();
-      }
+      if (activeState === 'playing') clearActive();
     });
   }
   return audioEl;
@@ -71,11 +73,7 @@ function getAudioEl() {
 
 function fallbackSpeak(text, seq) {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-    if (seq === requestSeq) {
-      activeText = null;
-      activeState = null;
-      notify();
-    }
+    if (seq === requestSeq) clearActive();
     return;
   }
   const synth = window.speechSynthesis;
@@ -86,11 +84,7 @@ function fallbackSpeak(text, seq) {
   const voice = synth.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith('zh'));
   if (voice) utt.voice = voice;
   const done = () => {
-    if (seq === requestSeq && activeText === text) {
-      activeText = null;
-      activeState = null;
-      notify();
-    }
+    if (seq === requestSeq && activeText === text) clearActive();
   };
   utt.onend = done;
   utt.onerror = done;
@@ -140,9 +134,5 @@ export function stopAudio() {
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
-  if (activeText !== null || activeState !== null) {
-    activeText = null;
-    activeState = null;
-    notify();
-  }
+  if (activeText !== null || activeState !== null) clearActive();
 }
