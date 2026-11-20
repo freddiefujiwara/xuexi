@@ -4,7 +4,15 @@
 import { shuffle } from './select.js';
 
 export function normalizeAnswer(s) {
-  return (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  // 数値など文字列でない値も文字列表現で比べる。String() が例外になる
+  // 値（toString が関数でないオブジェクト）は空として扱う。
+  let text = '';
+  try {
+    text = String(s ?? '');
+  } catch {
+    text = '';
+  }
+  return text.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
 // 声調記号を落としたピンイン比較用文字列にする（NFDで分解して結合記号を除去）。
@@ -27,7 +35,7 @@ export function judgeWord(input, word, allWords = []) {
   if (pinyinMatches(t, word)) return true;
   // 同じ日本語訳を持つ別の単語で答えても正解にする。
   for (const w of allWords) {
-    if (w.id === word.id || w.ja !== word.ja) continue;
+    if (!w || w.id === word.id || w.ja !== word.ja) continue;
     if (t === normalizeAnswer(w.zh) || pinyinMatches(t, w)) return true;
   }
   return false;
@@ -35,9 +43,11 @@ export function judgeWord(input, word, allWords = []) {
 
 export function filterByLevel(words, level) {
   if (level === 'all') return words;
-  return words.filter((w) => Number(w.level) === Number(level));
+  if (!Array.isArray(words)) return [];
+  return words.filter((w) => w && Number(w.level) === Number(level));
 }
 
 export function pickWords(words, count = 10, random = Math.random) {
+  if (!Array.isArray(words)) return [];
   return shuffle(words, random).slice(0, count);
 }

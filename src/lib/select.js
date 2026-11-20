@@ -3,14 +3,17 @@
 // レッスンごとに均等になるように巡回して拾う。
 export function selectDailyCards(cards, { total = 10, recentCount = 4, random = Math.random } = {}) {
   if (!Array.isArray(cards) || cards.length === 0) return [];
-  const lessonsDesc = [...new Set(cards.map((c) => c.lesson))].sort().reverse();
+  // 返却に null などの壊れた要素が混ざっていても、実在するカードだけで選ぶ。
+  const list = cards.filter((c) => c && typeof c === 'object');
+  if (list.length === 0) return [];
+  const lessonsDesc = [...new Set(list.map((c) => c.lesson))].sort().reverse();
   const recentLessons = new Set(lessonsDesc.slice(0, 2));
-  const recent = shuffle(cards.filter((c) => recentLessons.has(c.lesson)), random);
+  const recent = shuffle(list.filter((c) => recentLessons.has(c.lesson)), random);
   const picked = [...recent.slice(0, recentCount)];
 
   // 古い回は、レッスン単位で巡回して均等に混ぜる。
   const olderGroups = shuffle(
-    lessonsDesc.slice(2).map((lesson) => shuffle(cards.filter((c) => c.lesson === lesson), random)),
+    lessonsDesc.slice(2).map((lesson) => shuffle(list.filter((c) => c.lesson === lesson), random)),
     random
   );
   const want = Math.max(0, total - picked.length);
@@ -31,7 +34,7 @@ export function selectDailyCards(cards, { total = 10, recentCount = 4, random = 
   // 足りない分は、まだ選んでいないカードから補充する。
   if (picked.length < total) {
     const used = new Set(picked.map((c) => c.id));
-    const rest = shuffle(cards.filter((c) => !used.has(c.id)), random);
+    const rest = shuffle(list.filter((c) => !used.has(c.id)), random);
     picked.push(...rest.slice(0, total - picked.length));
   }
   // 直近のカードが前に固まらないよう、最後に全体を混ぜる。
