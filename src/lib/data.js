@@ -56,9 +56,11 @@ export async function fetchSection(section, { storage = sessionStorage, fetcher 
     const res = await fetcher(`${API_URL}?type=${encodeURIComponent(section)}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const payload = await res.json();
-    const rows = Array.isArray(payload[section]) ? payload[section] : [];
-    saveCachedSection(section, rows, payload.generatedAt, storage, now);
-    return { rows, generatedAt: payload.generatedAt || null, fromCache: false };
+    // 返却が null や文字列など「オブジェクトでない」場合も、例外にせず空として扱う。
+    const body = payload && typeof payload === 'object' ? payload : {};
+    const rows = Array.isArray(body[section]) ? body[section] : [];
+    saveCachedSection(section, rows, body.generatedAt, storage, now);
+    return { rows, generatedAt: body.generatedAt || null, fromCache: false };
   } catch (e) {
     if (cached) return { rows: cached.rows, generatedAt: cached.generatedAt, fromCache: true };
     throw e;

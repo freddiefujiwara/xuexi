@@ -4,8 +4,18 @@ import { shuffle } from './select.js';
 
 const PUNCT = /[\s。、，．・！？!?.,：:；;「」『』（）()…—ー~～"'""'']/g;
 
+// String() は toString が関数でないオブジェクトで例外になるため、
+// 文字列化できない値は空として扱う（判定は「不一致」に倒れる）。
+function toText(s) {
+  try {
+    return String(s ?? '');
+  } catch {
+    return '';
+  }
+}
+
 export function normalizeAnswer(s) {
-  return String(s ?? '').replace(PUNCT, '');
+  return toText(s).replace(PUNCT, '');
 }
 
 export function answersMatch(input, answer) {
@@ -41,7 +51,7 @@ function uniqueValues(items) {
 // 同じレッスンのカードを優先して誤答候補を集める。
 function distractorPool(pool, card, field) {
   const mine = field === 'target' ? card.target : card[field];
-  const others = pool.filter((c) => c.id !== card.id);
+  const others = pool.filter((c) => c && c.id !== card.id);
   const ordered = [
     ...others.filter((c) => c.lesson === card.lesson),
     ...others.filter((c) => c.lesson !== card.lesson),
@@ -69,7 +79,7 @@ export function mutateZh(card, pool, random = Math.random) {
   // 対象語を他のカードの対象語に入れ替える
   if (card.target && zh.includes(card.target)) {
     const targets = shuffle(
-      uniqueValues(pool.filter((c) => c.id !== card.id && c.target).map((c) => c.target)),
+      uniqueValues(pool.filter((c) => c && c.id !== card.id && c.target).map((c) => c.target)),
       random
     );
     for (const t of targets.slice(0, 2)) push(zh.replace(card.target, t));
@@ -168,8 +178,10 @@ const FORMAT_CYCLE = ['order', 'cloze-input', 'choice', 'cloze-choice'];
 // その日のカードに形式を巡回割当てする。条件を満たさない場合は
 // 並べ替え→穴埋め入力→選択→カード（自己判定）の順にフォールバックする。
 export function buildSession(cards, pool, random = Math.random) {
-  const all = pool && pool.length ? pool : cards;
-  return cards.map((card, i) => {
+  // 返却に null などの壊れた要素が混ざっていても、実在するカードだけで組み立てる。
+  const list = Array.isArray(cards) ? cards.filter((c) => c && typeof c === 'object') : [];
+  const all = pool && pool.length ? pool : list;
+  return list.map((card, i) => {
     const want = FORMAT_CYCLE[i % FORMAT_CYCLE.length];
     if (want === 'order' && canOrder(card)) return makeOrder(card, random);
     if (want === 'cloze-input' && canCloze(card)) return makeCloze(card, all, random, 'input');

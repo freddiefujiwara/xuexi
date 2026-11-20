@@ -13,11 +13,31 @@ export function formatMinutes(seconds) {
   return Math.max(1, Math.round(s / 60));
 }
 
+// String() は toString が関数でないオブジェクトで例外になるため、
+// 文字列化できない値は空として扱う。
+function toText(v) {
+  try {
+    return String(v ?? '');
+  } catch {
+    return '';
+  }
+}
+
+// Number() は toString が関数でないオブジェクトで例外になるため、
+// 変換できない値は 0 として扱う。
+function toSeconds(v) {
+  try {
+    return Number(v) || 0;
+  } catch {
+    return 0;
+  }
+}
+
 // studyLog 配列を { 'YYYY-MM-DD': seconds } に変形する。
 export function logByDate(studyLog) {
   const out = {};
   for (const row of studyLog || []) {
-    if (row && row.date) out[row.date] = Number(row.seconds) || 0;
+    if (row && row.date) out[row.date] = toSeconds(row.seconds);
   }
   return out;
 }
@@ -33,6 +53,7 @@ export function studyLevel(seconds) {
 
 // 月カレンダーのセル配列（週×7）。範囲外の日は null。
 export function buildCalendar(year, month, byDate) {
+  const lookup = byDate || {};
   const first = new Date(year, month - 1, 1);
   const startOffset = first.getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -40,7 +61,7 @@ export function buildCalendar(year, month, byDate) {
   for (let i = 0; i < startOffset; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const date = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const seconds = byDate[date] || 0;
+    const seconds = lookup[date] || 0;
     cells.push({ date, day: d, seconds, level: studyLevel(seconds) });
   }
   while (cells.length % 7 !== 0) cells.push(null);
@@ -125,9 +146,11 @@ export function encodeTransfer(log, doneDates) {
     .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([date, sec]) => `${date.replaceAll('-', '')}.${Number(sec)}`)
     .join(';');
+  // 数値など文字列でない日付が混ざっても例外にせず、文字列化してから並べる。
+  // ハイフンを外した形（yyyymmdd）で並べ替えても、妥当な日付同士の順序は変わらない。
   const donePart = [...(doneDates || [])]
+    .map((d) => toText(d).replaceAll('-', ''))
     .sort()
-    .map((d) => d.replaceAll('-', ''))
     .join(',');
   const raw = `v1|${studyPart}|${donePart}`;
   return btoa(raw).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
