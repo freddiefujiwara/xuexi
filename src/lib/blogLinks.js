@@ -11,6 +11,7 @@ const LESSON_URLS = {
   '2026-10-30': `${BLOG}1BfOXlaRhgN0Ksxxx0wT9Ku3KPYMbLrzgaZ9xQ7_MOMY`, // 2026-10-31 学び直し4回目
   '2026-11-06': `${BLOG}186JmaWRWpqCCu97m1EJHliffTNbgMlf4ivYFcY8lB6k`, // 2026-11-07 学び直し5回目
   '2026-11-14': `${BLOG}1N3MbM6oMJiJ6Ab0H3y9beGuXY75dcniechM6GnL8Gmw`, // 2026-11-15 学び直し6回目
+  '2026-11-21': `${BLOG}1wuJcgJZ7l6gLQ85VYvCFwgr3fMsDC3lDrz3baTM-2jI`, // 2026-11-22 学び直し7回目
 };
 
 // 同じレッスン日でも、別の記事から作ったカードは個別に対応させる。
