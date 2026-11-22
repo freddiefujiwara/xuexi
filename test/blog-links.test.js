@@ -11,6 +11,9 @@ describe('blogLinks: カードとブログ記事の対応', () => {
     expect(blogUrlForCard({ id: 'c999', lesson: '2026-11-14' })).toBe(
       `${BLOG}1N3MbM6oMJiJ6Ab0H3y9beGuXY75dcniechM6GnL8Gmw`
     );
+    expect(blogUrlForCard({ id: 'c999', lesson: '2026-11-21' })).toBe(
+      `${BLOG}1wuJcgJZ7l6gLQ85VYvCFwgr3fMsDC3lDrz3baTM-2jI`
+    );
   });
 
   test('lesson が ISO 日時で届いても先頭10文字で対応する', () => {
