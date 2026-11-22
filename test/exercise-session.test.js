@@ -10,7 +10,7 @@ async function clickButtonWithText(wrapper, text, selector = 'button') {
 }
 
 describe('ExerciseSession: 選択問題', () => {
-  const bare = { id: 'x1', zh: '你好。', pinyin: 'Nǐ hǎo.', ja: 'こんにちは。', lesson: '2026-10-31', pillar: '-', target: '', chunks: '' };
+  const bare = { id: 'x1', zh: '你好。', pinyin: 'Nǐ hǎo.', ja: 'こんにちは。', lesson: '2026-10-31', pillar: '-', target: '', chunks: '', article: 'https://freddiefujiwara.com/blog/1BfOXlaRhgN0Ksxxx0wT9Ku3KPYMbLrzgaZ9xQ7_MOMY' };
   const cards = [bare];
   const fullPool = [...pool, bare];
 
