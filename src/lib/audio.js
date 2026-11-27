@@ -25,11 +25,25 @@ export function decodeBase64ToBlob(base64, mime) {
 }
 
 let audioEl = null;
+const MAX_CACHED_AUDIO_URLS = 64;
 const urlCache = new Map();
 let activeText = null;
 let activeState = null; // 'loading' | 'playing'
 let requestSeq = 0;
 const listeners = new Set();
+
+// Map の先頭が最も長く使われていない音声。
+function rememberAudioUrl(text, url) {
+  urlCache.delete(text);
+  urlCache.set(text, url);
+  if (urlCache.size <= MAX_CACHED_AUDIO_URLS) return;
+  for (const [oldText, oldUrl] of urlCache) {
+    if (oldUrl === audioEl?.src) continue;
+    urlCache.delete(oldText);
+    URL.revokeObjectURL(oldUrl);
+    break;
+  }
+}
 
 function notify() {
   for (const fn of listeners) fn({ text: activeText, state: activeState });
@@ -110,10 +124,11 @@ export async function speakChinese(text) {
       const res = await fetch(ttsApiUrl(text));
       const data = await res.json();
       if (!data || !data.ok || !data.audio) throw new Error('tts unavailable');
+      if (seq !== requestSeq) return;
       url = URL.createObjectURL(decodeBase64ToBlob(data.audio, data.mimeType));
-      urlCache.set(text, url);
     }
     if (seq !== requestSeq) return;
+    rememberAudioUrl(text, url);
     const el = getAudioEl();
     el.src = url;
     activeState = 'playing';
