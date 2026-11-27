@@ -188,9 +188,10 @@ describe('stripTones / judgeWord（単語）', () => {
 });
 
 describe('fetchSection', () => {
-  it('どんな JSON ペイロードでも rows は必ず配列で返る', async () => {
+  it('対象セクションが配列の応答だけを受け入れる', async () => {
+    const payloads = fc.oneof(fc.jsonValue(), fc.record({ cards: fc.array(fc.jsonValue()) }));
     await fc.assert(
-      fc.asyncProperty(fc.jsonValue(), async (payload) => {
+      fc.asyncProperty(payloads, async (payload) => {
         const map = new Map();
         const storage = {
           getItem: (k) => (map.has(k) ? map.get(k) : null),
@@ -198,9 +199,13 @@ describe('fetchSection', () => {
           removeItem: (k) => map.delete(k),
         };
         const fetcher = async () => ({ ok: true, json: async () => payload });
-        const result = await fetchSection('cards', { storage, fetcher });
-        expect(Array.isArray(result.rows)).toBe(true);
-        expect(result.fromCache).toBe(false);
+        const result = fetchSection('cards', { storage, fetcher });
+        if (Array.isArray(payload?.cards)) {
+          await expect(result).resolves.toMatchObject({ rows: payload.cards, fromCache: false });
+        } else {
+          await expect(result).rejects.toThrow('教材データの形式が正しくありません');
+          expect(map.size).toBe(0);
+        }
       }),
       RUNS
     );
