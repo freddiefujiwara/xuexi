@@ -1,9 +1,8 @@
 // 異常系：xuexi-gas /exec の返却が崩れていた場合に、整形層が
 // 例外を投げずに「使えるものだけ使う」形へ倒れることを固定する。
-// fetchSection は配列かどうかしか見ないため、要素の null や型違いは
-// そのまま各 lib に届く前提で試験する。
+// セクション配列内の null や型違いは、そのまま各 lib に届く前提で試験する。
 import { describe, it, expect, vi } from 'vitest';
-import { fetchSection } from '../src/lib/data.js';
+import { SECTION_CACHE_TTL_MS, fetchSection, loadCachedSection, saveCachedSection } from '../src/lib/data.js';
 import { selectDailyCards } from '../src/lib/select.js';
 import {
   answersMatch,
@@ -31,16 +30,43 @@ function fakeStorage() {
 }
 
 describe('fetchSection：ペイロード自体が崩れている', () => {
-  it('JSON が null / undefined でも例外にせず空の rows を返す', async () => {
-    for (const payload of [null, undefined]) {
+  it.each([null, undefined, { error: 'unavailable' }, { cards: {} }])(
+    '有効な配列のない応答は、キャッシュも無ければ取得エラーにする（%j）',
+    async (payload) => {
+      const storage = fakeStorage();
       const fetcher = vi.fn(async () => ({ ok: true, json: async () => payload }));
-      const result = await fetchSection('cards', { storage: fakeStorage(), fetcher });
-      expect(result.rows).toEqual([]);
-      expect(result.fromCache).toBe(false);
-    }
+      await expect(fetchSection('cards', { storage, fetcher })).rejects.toThrow('教材データの形式が正しくありません');
+      expect(loadCachedSection('cards', storage)).toBeNull();
+    },
+  );
+
+  it('異常な応答では古い教材と保存時刻を保持し、次回は再取得する', async () => {
+    const storage = fakeStorage();
+    saveCachedSection('cards', [pool[0]], 'g0', storage, 0);
+    const now = SECTION_CACHE_TTL_MS + 1;
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ drills: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ cards: [pool[1]], generatedAt: 'g1' }) });
+
+    const result = await fetchSection('cards', { storage, fetcher, now });
+    expect(result).toEqual({ rows: [pool[0]], generatedAt: 'g0', fromCache: true });
+    expect(loadCachedSection('cards', storage)).toEqual({ rows: [pool[0]], generatedAt: 'g0', fetchedAt: 0 });
+    const next = await fetchSection('cards', { storage, fetcher, now: now + 1 });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(next).toEqual({ rows: [pool[1]], generatedAt: 'g1', fromCache: false });
   });
 
-  it('セクションが配列でなければ空、要素の null はそのまま通す（整形側で捌く）', async () => {
+  it('API が正常な空配列を返したら古い教材を空で更新する', async () => {
+    const storage = fakeStorage();
+    saveCachedSection('cards', [pool[0]], 'g0', storage, 0);
+    const now = SECTION_CACHE_TTL_MS + 1;
+    const fetcher = vi.fn(async () => ({ ok: true, json: async () => ({ cards: [], generatedAt: 'g1' }) }));
+    const result = await fetchSection('cards', { storage, fetcher, now });
+    expect(result).toEqual({ rows: [], generatedAt: 'g1', fromCache: false });
+    expect(loadCachedSection('cards', storage)).toEqual({ rows: [], generatedAt: 'g1', fetchedAt: now });
+  });
+
+  it('配列内の null はそのまま通す（整形側で捌く）', async () => {
     const fetcher = vi.fn(async () => ({
       ok: true,
       json: async () => ({ cards: [pool[0], null], generatedAt: 'g1' }),
