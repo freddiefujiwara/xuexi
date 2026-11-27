@@ -7,14 +7,17 @@ const props = defineProps({
   label: { type: String, default: '聞く' },
 });
 
-const state = ref(null);
+const currentAudio = ref({ text: null, state: null });
+const state = computed(() => (
+  props.text && currentAudio.value.text === props.text ? currentAudio.value.state : null
+));
 const face = computed(() => buttonFace(state.value));
 // /blog の音楽プレイヤーと同じく、読み込み中は名前も「読み込み中」にする。
 const effectiveLabel = computed(() => (state.value === 'loading' ? '読み込み中' : props.label));
 let unsubscribe = null;
 
 function sync(current) {
-  state.value = props.text && current.text === props.text ? current.state : null;
+  currentAudio.value = current;
 }
 
 onMounted(() => {
