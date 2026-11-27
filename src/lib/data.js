@@ -55,10 +55,10 @@ export async function fetchSection(section, { storage = sessionStorage, fetcher 
   try {
     const res = await fetcher(`${API_URL}?type=${encodeURIComponent(section)}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const payload = await res.json();
-    // 返却が null や文字列など「オブジェクトでない」場合も、例外にせず空として扱う。
-    const body = payload && typeof payload === 'object' ? payload : {};
-    const rows = Array.isArray(body[section]) ? body[section] : [];
+    const body = await res.json();
+    // 正常な空配列と異常な応答を区別し、異常時は既存キャッシュを上書きしない。
+    const rows = body?.[section];
+    if (!Array.isArray(rows)) throw new Error('教材データの形式が正しくありません');
     saveCachedSection(section, rows, body.generatedAt, storage, now);
     return { rows, generatedAt: body.generatedAt || null, fromCache: false };
   } catch (e) {
